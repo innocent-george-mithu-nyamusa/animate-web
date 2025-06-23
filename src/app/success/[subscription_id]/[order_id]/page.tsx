@@ -36,10 +36,10 @@ export default function Success({ params, SearchParams }: PageProps) {
     useState<SubscriptionData | null>(null);
   const [processingSubscription, setProcessingSubscription] = useState(false);
   const { subscription_id } = params;
+  console.log(params);
 
   useEffect(() => {
     const processSubscription = async () => {
-      
       if (!subscription_id) {
         setError("Missing subscription information");
         setLoading(false);
@@ -56,7 +56,8 @@ export default function Success({ params, SearchParams }: PageProps) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            subscriptionId: subscription_id          }),
+            subscriptionId: subscription_id,
+          }),
         });
 
         if (!response.ok) {
