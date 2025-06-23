@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { subscriptionId, orderId } = req.body;
+    const { subscriptionId } = req.body;
 
     if (!subscriptionId) {
       return res.status(400).json({ error: 'Subscription ID is required' });
@@ -147,47 +147,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 async function fetchLemonSqueezySubscription(subscriptionId: string): Promise<LemonSqueezyWebhookData | null> {
   try {
     // This is where you would make the actual API call to LemonSqueezy
-    // const response = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`, {
-    //   headers: {
-    //     'Authorization': `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
-    //     'Accept': 'application/vnd.api+json',
-    //     'Content-Type': 'application/vnd.api+json',
-    //   },
-    // });
+    const response = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
+        'Accept': 'application/vnd.api+json',
+        'Content-Type': 'application/vnd.api+json',
+      },
+    });
     
     // For now, return mock data
-    const mockData: LemonSqueezyWebhookData = {
-      subscription: {
-        id: subscriptionId,
-        status: 'active',
-        variant_id: 'variant_123',
-        customer_email: 'user@example.com',
-        user_name: 'John Doe',
-        product_name: 'Animate Pro',
-        variant_name: 'Monthly',
-        price: '9.99',
-        currency: 'USD',
-        interval: 'monthly',
-        trial_ends_at: null,
-        renews_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      order: {
-        id: `order_${Date.now()}`,
-        order_number: Math.floor(Math.random() * 1000000),
-        total: '9.99',
-        tax: '0.00',
-        status: 'paid',
-      },
-      customer: {
-        id: 'customer_123',
-        email: 'user@example.com',
-        name: 'John Doe',
-      },
-    };
+    // const mockData: LemonSqueezyWebhookData = {
+    //   subscription: {
+    //     id: subscriptionId,
+    //     status: 'active',
+    //     variant_id: 'variant_123',
+    //     customer_email: 'user@example.com',
+    //     user_name: 'John Doe',
+    //     product_name: 'Animate Pro',
+    //     variant_name: 'Monthly',
+    //     price: '9.99',
+    //     currency: 'USD',
+    //     interval: 'monthly',
+    //     trial_ends_at: null,
+    //     renews_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    //     created_at: new Date().toISOString(),
+    //     updated_at: new Date().toISOString(),
+    //   },
+    //   order: {
+    //     id: `order_${Date.now()}`,
+    //     order_number: Math.floor(Math.random() * 1000000),
+    //     total: '9.99',
+    //     tax: '0.00',
+    //     status: 'paid',
+    //   },
+    //   customer: {
+    //     id: 'customer_123',
+    //     email: 'user@example.com',
+    //     name: 'John Doe',
+    //   },
+    // };
 
-    return mockData;
+    // return mockData;
+    return response.body;
   } catch (error) {
     console.error('Error fetching subscription from LemonSqueezy:', error);
     return null;
