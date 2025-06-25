@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 
 import {
   CheckCircle,
-  Loader2,
   AlertCircle,
   Smartphone,
   ArrowRight,
@@ -28,7 +27,7 @@ interface PageProps {
   SearchParams: {};
 }
 
-export default function Success({ params, SearchParams }: PageProps) {
+export function Success({ params, SearchParams }: PageProps) {
   //  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
