@@ -4,6 +4,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FirebaseSubscriptionService } from "@/lib/firebase-admin";
 
+
+interface LemonSqueezyWebhookPayload {
+  type: string;
+  id: string;
+  attributes: {
+    subscription_id: number;
+    price_id: number;
+    quantity: number;
+    is_usage_based: boolean;
+    created_at: string;
+    updated_at: string;
+  };
+  relationships: {
+    subscription: {
+      links: {
+        related: string;
+        self: string;
+      };
+    };
+    price: {
+      links: {
+        related: string;
+        self: string;
+      };
+    };
+    "usage-records": {
+      links: {
+        related: string;
+        self: string;
+      };
+    };
+  };
+  links: {
+    self: string;
+  };
+}
+
 interface LemonSqueezyWebhookData {
   subscription: {
     id: string;
@@ -38,10 +75,10 @@ interface LemonSqueezyWebhookData {
 export async function POST(req: NextRequest) {
   try {
     // Parse the request body - await the json() method
-    const body = await req.json();
+    const body: LemonSqueezyWebhookPayload = await req.json();
 
     // Extract subscriptionId from the body
-    const { subscriptionId } = body;
+    const subscriptionId = body.attributes?.subscription_id;
 
     if (!subscriptionId) {
       return NextResponse.json(
@@ -51,11 +88,13 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(subscriptionId);
+
+    const subscriptionIdString = subscriptionId.toString();
     // Initialize Firebase service
     const firebaseService = new FirebaseSubscriptionService();
 
     // Fetch the subscription data from LemonSqueezy API
-    const subscriptionData = await fetchLemonSqueezySubscription(subscriptionId);
+    const subscriptionData = await fetchLemonSqueezySubscription(subscriptionIdString);
     
     if (!subscriptionData) {
       return NextResponse.json(
@@ -154,48 +193,6 @@ export async function POST(req: NextRequest) {
 // Replace this with actual LemonSqueezy API integration
 async function fetchLemonSqueezySubscription(subscriptionId: string): Promise<LemonSqueezyWebhookData | null> {
   try {
-    // This is where you would make the actual API call to LemonSqueezy
-    // const response = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`, {
-    //   headers: {
-    //     'Authorization': `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
-    //     'Accept': 'application/vnd.api+json',
-    //     'Content-Type': 'application/vnd.api+json',
-    //   },
-    // });
-    
-    // For now, return mock data
-    // const mockData: LemonSqueezyWebhookData = {
-    //   subscription: {
-    //     id: subscriptionId,
-    //     status: 'active',
-    //     variant_id: 'variant_123',
-    //     customer_email: 'user@example.com',
-    //     user_name: 'John Doe',
-    //     product_name: 'Animate Pro',
-    //     variant_name: 'Monthly',
-    //     price: '9.99',
-    //     currency: 'USD',
-    //     interval: 'monthly',
-    //     trial_ends_at: null,
-    //     renews_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    //     created_at: new Date().toISOString(),
-    //     updated_at: new Date().toISOString(),
-    //   },
-    //   order: {
-    //     id: `order_${Date.now()}`,
-    //     order_number: Math.floor(Math.random() * 1000000),
-    //     total: '9.99',
-    //     tax: '0.00',
-    //     status: 'paid',
-    //   },
-    //   customer: {
-    //     id: 'customer_123',
-    //     email: 'user@example.com',
-    //     name: 'John Doe',
-    //   },
-    // };
-
-    // return response.json();
     
     // For actual implementation, uncomment and modify this:
     const response = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`, {
