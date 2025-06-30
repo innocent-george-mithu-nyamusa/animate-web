@@ -1,43 +1,44 @@
 // pages/api/process-subscription.ts (if using Pages Router)
 // OR app/api/process-subscription/route.ts (if using App Router)
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { FirebaseSubscriptionService } from "@/lib/firebase-admin";
 
-
 interface LemonSqueezyWebhookPayload {
-  type: string;
-  id: string;
-  attributes: {
-    subscription_id: number;
-    price_id: number;
-    quantity: number;
-    is_usage_based: boolean;
-    created_at: string;
-    updated_at: string;
-  };
-  relationships: {
-    subscription: {
-      links: {
-        related: string;
-        self: string;
+  data: {
+    type: string;
+    id: string;
+    attributes: {
+      subscription_id: number;
+      price_id: number;
+      quantity: number;
+      is_usage_based: boolean;
+      created_at: string;
+      updated_at: string;
+    };
+    relationships: {
+      subscription: {
+        links: {
+          related: string;
+          self: string;
+        };
+      };
+      price: {
+        links: {
+          related: string;
+          self: string;
+        };
+      };
+      "usage-records": {
+        links: {
+          related: string;
+          self: string;
+        };
       };
     };
-    price: {
-      links: {
-        related: string;
-        self: string;
-      };
+    links: {
+      self: string;
     };
-    "usage-records": {
-      links: {
-        related: string;
-        self: string;
-      };
-    };
-  };
-  links: {
-    self: string;
   };
 }
 
@@ -78,11 +79,11 @@ export async function POST(req: NextRequest) {
     const body: LemonSqueezyWebhookPayload = await req.json();
 
     // Extract subscriptionId from the body
-    const subscriptionId = body.attributes?.subscription_id;
+    const subscriptionId = body.data.attributes?.subscription_id;
 
     if (!subscriptionId) {
       return NextResponse.json(
-        { error: 'Subscription ID is required' }, 
+        { error: "Subscription ID is required" },
         { status: 400 }
       );
     }
@@ -94,11 +95,12 @@ export async function POST(req: NextRequest) {
     const firebaseService = new FirebaseSubscriptionService();
 
     // Fetch the subscription data from LemonSqueezy API
-    const subscriptionData = await fetchLemonSqueezySubscription(subscriptionIdString);
-    
+    const subscriptionData =
+      await fetchLemonSqueezySubscription(subscriptionIdString);
+
     if (!subscriptionData) {
       return NextResponse.json(
-        { error: 'Subscription not found' }, 
+        { error: "Subscription not found" },
         { status: 404 }
       );
     }
@@ -111,7 +113,9 @@ export async function POST(req: NextRequest) {
       userId,
       isSubscribed: true,
       subscriptionId: subscriptionData.subscription.id,
-      subscriptionType: firebaseService.extractSubscriptionTypeFromInterval(subscriptionData.subscription.interval),
+      subscriptionType: firebaseService.extractSubscriptionTypeFromInterval(
+        subscriptionData.subscription.interval
+      ),
       subscriptionStartDate: new Date(subscriptionData.subscription.created_at),
       subscriptionEndDate: new Date(subscriptionData.subscription.renews_at),
       additionalData: {
@@ -134,8 +138,8 @@ export async function POST(req: NextRequest) {
       currency: subscriptionData.subscription.currency,
       interval: subscriptionData.subscription.interval,
       customerEmail: subscriptionData.subscription.customer_email,
-      trialEndsAt: subscriptionData.subscription.trial_ends_at 
-        ? new Date(subscriptionData.subscription.trial_ends_at) 
+      trialEndsAt: subscriptionData.subscription.trial_ends_at
+        ? new Date(subscriptionData.subscription.trial_ends_at)
         : undefined,
       renewsAt: new Date(subscriptionData.subscription.renews_at),
       metadata: {
@@ -151,7 +155,7 @@ export async function POST(req: NextRequest) {
     await firebaseService.logTransaction({
       userId,
       transactionId: `${subscriptionData.order.id}-${Date.now()}`,
-      type: 'subscription_payment',
+      type: "subscription_payment",
       status: subscriptionData.order.status,
       amount: parseFloat(subscriptionData.order.total),
       currency: subscriptionData.subscription.currency,
@@ -166,65 +170,73 @@ export async function POST(req: NextRequest) {
     });
 
     // Return success response with subscription data
-    return NextResponse.json({
-      success: true,
-      subscription: {
-        subscriptionId: subscriptionData.subscription.id,
-        productName: subscriptionData.subscription.product_name,
-        variantName: subscriptionData.subscription.variant_name,
-        amount: subscriptionData.subscription.price,
-        currency: subscriptionData.subscription.currency,
-        interval: subscriptionData.subscription.interval,
-        userEmail: subscriptionData.subscription.customer_email,
-        status: subscriptionData.subscription.status,
+    return NextResponse.json(
+      {
+        success: true,
+        subscription: {
+          subscriptionId: subscriptionData.subscription.id,
+          productName: subscriptionData.subscription.product_name,
+          variantName: subscriptionData.subscription.variant_name,
+          amount: subscriptionData.subscription.price,
+          currency: subscriptionData.subscription.currency,
+          interval: subscriptionData.subscription.interval,
+          userEmail: subscriptionData.subscription.customer_email,
+          status: subscriptionData.subscription.status,
+        },
       },
-    }, { status: 200 });
-
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('Error processing subscription:', error);
-    return NextResponse.json({ 
-      error: 'Failed to process subscription',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error("Error processing subscription:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to process subscription",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 
 // Mock function to simulate LemonSqueezy API call
 // Replace this with actual LemonSqueezy API integration
-async function fetchLemonSqueezySubscription(subscriptionId: string): Promise<LemonSqueezyWebhookData | null> {
+async function fetchLemonSqueezySubscription(
+  subscriptionId: string
+): Promise<LemonSqueezyWebhookData | null> {
   try {
-    
     // For actual implementation, uncomment and modify this:
-    const response = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`, {
-      headers: {
-        'Authorization': `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
-        'Accept': 'application/vnd.api+json',
-        'Content-Type': 'application/vnd.api+json',
-      },
-    });
-    
+    const response = await fetch(
+      `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
+          Accept: "application/vnd.api+json",
+          "Content-Type": "application/vnd.api+json",
+        },
+      }
+    );
+
     if (!response.ok) {
       throw new Error(`LemonSqueezy API error: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data;
-    
   } catch (error) {
-    console.error('Error fetching subscription from LemonSqueezy:', error);
+    console.error("Error fetching subscription from LemonSqueezy:", error);
     return null;
   }
 }
 
 // Optional: Add other HTTP methods if needed
 export async function GET(req: NextRequest) {
-  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }
 
 export async function PUT(req: NextRequest) {
-  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }
 
 export async function DELETE(req: NextRequest) {
-  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }
