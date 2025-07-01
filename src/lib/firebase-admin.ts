@@ -3,7 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 
 // Initialize Firebase Admin SDK
 
-const base64Key = process.env.FIREBASE_ENCODED_ACCOUNT;
+const base64Key = process.env.FIREBASE_PRIVATE_KEY;
 if (!base64Key) {
   throw new Error("Missing firebase credentials in .env");
 }
