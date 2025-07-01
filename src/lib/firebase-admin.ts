@@ -114,7 +114,7 @@ export class FirebaseSubscriptionService {
         currency,
         interval,
         customerEmail,
-        trialEndsAt: trialEndsAt?.toISOString(),
+        trialEndsAt: "null",
         renewsAt: renewsAt?.toISOString(),
         createdAt: new Date(),
         updatedAt: new Date(),

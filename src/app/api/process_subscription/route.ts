@@ -39,37 +39,80 @@ interface LemonSqueezyWebhookPayload {
     links: {
       self: string;
     };
+  }, 
+  meta: {
+    test_mode: boolean,
+    event_name: string,
+    webhook_id: string,
+    custom_data: {
+      user_data: string
+    }
   };
 }
 
-interface LemonSqueezyWebhookData {
-  subscription: {
-    id: string;
-    status: string;
-    variant_id: string;
-    customer_email: string;
-    user_name: string;
-    product_name: string;
-    variant_name: string;
-    price: string;
-    currency: string;
-    interval: string;
-    trial_ends_at: string | null;
-    renews_at: string;
-    created_at: string;
-    updated_at: string;
+interface LemonSqueezySubscriptionResponse {
+  jsonapi: {
+    version: string;
   };
-  order: {
-    id: string;
-    order_number: number;
-    total: string;
-    tax: string;
-    status: string;
+  links: {
+    self: string;
   };
-  customer: {
+  data: {
+    type: string;
     id: string;
-    email: string;
-    name: string;
+    attributes: {
+      store_id: number;
+      customer_id: number;
+      order_id: number;
+      order_item_id: number;
+      product_id: number;
+      variant_id: number;
+      product_name: string;
+      variant_name: string;
+      user_name: string;
+      user_email: string;
+      status: string;
+      status_formatted: string;
+      card_brand: string;
+      card_last_four: string;
+      payment_processor: string;
+      pause: any;
+      cancelled: boolean;
+      trial_ends_at: string | null;
+      billing_anchor: number;
+      first_subscription_item: {
+        id: number;
+        subscription_id: number;
+        price_id: number;
+        quantity: number;
+        is_usage_based: boolean;
+        created_at: string;
+        updated_at: string;
+      };
+      urls: {
+        update_payment_method: string;
+        customer_portal: string;
+        customer_portal_update_subscription: string;
+      };
+      renews_at: string;
+      ends_at: string | null;
+      created_at: string;
+      updated_at: string;
+      test_mode: boolean;
+    };
+    relationships: {
+      store: { links: { related: string; self: string; } };
+      customer: { links: { related: string; self: string; } };
+      order: { links: { related: string; self: string; } };
+      "order-item": { links: { related: string; self: string; } };
+      product: { links: { related: string; self: string; } };
+      variant: { links: { related: string; self: string; } };
+      "subscription-items": { links: { related: string; self: string; } };
+      "subscription-invoices": { links: { related: string; self: string; } };
+    };
+    links: {
+      self: string;
+    };
   };
 }
 
@@ -83,7 +126,7 @@ export async function POST(req: NextRequest) {
 
     if (!subscriptionId) {
       return NextResponse.json(
-        { error: "Subscription ID is required" },
+        { error: `Subscription ID is missing`},
         { status: 400 }
       );
     }
@@ -95,97 +138,98 @@ export async function POST(req: NextRequest) {
     const firebaseService = new FirebaseSubscriptionService();
 
     // Fetch the subscription data from LemonSqueezy API
-    const subscriptionData =
-      await fetchLemonSqueezySubscription(subscriptionIdString);
-
-    if (!subscriptionData) {
+   const subscriptionResponse = await fetchLemonSqueezySubscription(subscriptionIdString);
+    
+    if (!subscriptionResponse) {
       return NextResponse.json(
-        { error: "Subscription not found" },
+        { error: 'Subscription not found' }, 
         { status: 404 }
       );
     }
 
+
+     const subscriptionData = subscriptionResponse.data.attributes;
+
     // Extract user ID from subscription metadata or customer email
-    const userId = subscriptionData.subscription.customer_email; // or get from your user mapping
+    const userId = body.meta.custom_data.user_data; // or get from your user mapping
 
     // Update user subscription in Firebase
     await firebaseService.updateUserSubscription({
       userId,
       isSubscribed: true,
-      subscriptionId: subscriptionData.subscription.id,
-      subscriptionType: firebaseService.extractSubscriptionTypeFromInterval(
-        subscriptionData.subscription.interval
-      ),
-      subscriptionStartDate: new Date(subscriptionData.subscription.created_at),
-      subscriptionEndDate: new Date(subscriptionData.subscription.renews_at),
+      subscriptionId: subscriptionResponse.data.id,
+      subscriptionType: firebaseService.extractSubscriptionTypeFromInterval('monthly'), // You might need to determine this from variant
+      subscriptionStartDate: new Date(subscriptionData.created_at),
+      subscriptionEndDate: new Date(subscriptionData.renews_at),
       additionalData: {
-        productName: subscriptionData.subscription.product_name,
-        variantName: subscriptionData.subscription.variant_name,
-        amount: subscriptionData.subscription.price,
-        currency: subscriptionData.subscription.currency,
-        customerEmail: subscriptionData.subscription.customer_email,
-        customerName: subscriptionData.customer.name,
+        productName: subscriptionData.product_name,
+        variantName: subscriptionData.variant_name,
+        amount: subscriptionData.first_subscription_item?.price_id?.toString() || '0', // You'll need to get price from another API call
+        currency: 'USD', // You'll need to get this from price/variant data
+        customerEmail: subscriptionData.user_email,
+        customerName: subscriptionData.user_name,
       },
     });
 
     // Create subscription record
     await firebaseService.createSubscriptionRecord({
       userId,
-      subscriptionId: subscriptionData.subscription.id,
-      variantId: subscriptionData.subscription.variant_id,
-      status: subscriptionData.subscription.status,
-      amount: parseFloat(subscriptionData.subscription.price),
-      currency: subscriptionData.subscription.currency,
-      interval: subscriptionData.subscription.interval,
-      customerEmail: subscriptionData.subscription.customer_email,
-      trialEndsAt: subscriptionData.subscription.trial_ends_at
-        ? new Date(subscriptionData.subscription.trial_ends_at)
+      subscriptionId: subscriptionResponse.data.id,
+      variantId: subscriptionData.variant_id.toString(),
+      status: subscriptionData.status,
+      amount: 0, // You'll need to fetch price data separately
+      currency: 'USD', // You'll need to fetch this from price data
+      interval: 'monthly', // You'll need to determine this from variant/price data
+      customerEmail: subscriptionData.user_email,
+      trialEndsAt: subscriptionData.trial_ends_at 
+        ? new Date(subscriptionData.trial_ends_at) 
         : undefined,
-      renewsAt: new Date(subscriptionData.subscription.renews_at),
+      renewsAt: new Date(subscriptionData.renews_at),
       metadata: {
-        orderId: subscriptionData.order.id,
-        orderNumber: subscriptionData.order.order_number,
-        productName: subscriptionData.subscription.product_name,
-        variantName: subscriptionData.subscription.variant_name,
-        customerName: subscriptionData.customer.name,
+        orderId: subscriptionData.order_id.toString(),
+        orderNumber: subscriptionData.order_item_id,
+        productName: subscriptionData.product_name,
+        variantName: subscriptionData.variant_name,
+        customerName: subscriptionData.user_name,
+        cardBrand: subscriptionData.card_brand,
+        cardLastFour: subscriptionData.card_last_four,
+        paymentProcessor: subscriptionData.payment_processor,
+        testMode: subscriptionData.test_mode,
       },
     });
 
     // Log the transaction
     await firebaseService.logTransaction({
       userId,
-      transactionId: `${subscriptionData.order.id}-${Date.now()}`,
-      type: "subscription_payment",
-      status: subscriptionData.order.status,
-      amount: parseFloat(subscriptionData.order.total),
-      currency: subscriptionData.subscription.currency,
-      subscriptionId: subscriptionData.subscription.id,
-      orderId: subscriptionData.order.id,
+      transactionId: `${subscriptionData.order_id}-${Date.now()}`,
+      type: 'subscription_payment',
+      status: subscriptionData.status,
+      amount: 0, // You'll need to fetch the actual amount
+      currency: 'USD', // You'll need to fetch this
+      subscriptionId: subscriptionResponse.data.id,
+      orderId: subscriptionData.order_id.toString(),
       metadata: {
-        orderNumber: subscriptionData.order.order_number,
-        tax: subscriptionData.order.tax,
-        productName: subscriptionData.subscription.product_name,
-        variantName: subscriptionData.subscription.variant_name,
+        orderNumber: subscriptionData.order_item_id,
+        tax: '0.00', // You'll need to fetch this
+        productName: subscriptionData.product_name,
+        variantName: subscriptionData.variant_name,
       },
     });
 
     // Return success response with subscription data
-    return NextResponse.json(
-      {
-        success: true,
-        subscription: {
-          subscriptionId: subscriptionData.subscription.id,
-          productName: subscriptionData.subscription.product_name,
-          variantName: subscriptionData.subscription.variant_name,
-          amount: subscriptionData.subscription.price,
-          currency: subscriptionData.subscription.currency,
-          interval: subscriptionData.subscription.interval,
-          userEmail: subscriptionData.subscription.customer_email,
-          status: subscriptionData.subscription.status,
-        },
+    return NextResponse.json({
+      success: true,
+      subscription: {
+        subscriptionId: subscriptionResponse.data.id,
+        productName: subscriptionData.product_name,
+        variantName: subscriptionData.variant_name,
+        amount: '0', // You'll need to fetch price data
+        currency: 'USD', // You'll need to fetch this
+        interval: 'monthly', // You'll need to determine this
+        userEmail: subscriptionData.user_email,
+        status: subscriptionData.status,
       },
-      { status: 200 }
-    );
+    }, { status: 200 });
   } catch (error) {
     console.error("Error processing subscription:", error);
     return NextResponse.json(
@@ -202,26 +246,28 @@ export async function POST(req: NextRequest) {
 // Replace this with actual LemonSqueezy API integration
 async function fetchLemonSqueezySubscription(
   subscriptionId: string
-): Promise<LemonSqueezyWebhookData | null> {
+): Promise<LemonSqueezySubscriptionResponse | null> {
   try {
     // For actual implementation, uncomment and modify this:
     const response = await fetch(
       `https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.LEMONSQUEEZY_API_KEY}`,
+          Authorization: `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI5NGQ1OWNlZi1kYmI4LTRlYTUtYjE3OC1kMjU0MGZjZDY5MTkiLCJqdGkiOiJlNjAxMzM3YTNmMzc1YjM4ZmEzMTlmZGE3YzRhMDI5NDEyNzQ5NDgwMmI5ZTU5OGU5MTc0NzRlNDUyMDlhZDI3NjczZjdiZWE2ZjFlNzBjOCIsImlhdCI6MTc0ODM1MzEwNy40NTI4NzIsIm5iZiI6MTc0ODM1MzEwNy40NTI4NzQsImV4cCI6MjA2Mzg4NTkwNy40MTUxLCJzdWIiOiI0ODYyMjM4Iiwic2NvcGVzIjpbXX0.xXc0g-WkEmcgDM6WHYT_nB3fwp-B65gTt87Ek-MCa7cHUgPuioDYbO2VPJvqXU3LgXincm3UCu1waToOQRVbfZoS-Q7Xm_nbBhKLu4NlobZbM2eGh7RJGSKAY3NIV7IERVlgjjEr83TZUWlKSqBM7dEg6dagSMC3-cSBIa8cpyPzAQ97WbkE5QWyCmKugT3RBNfSfpKuaIHssRa_Lhm5DHIN_-ot9JJo_q-Voh8EHhJnFD7_PvwkaOrmjPt6LTJ2sd1qLnCmUkZSxtiq-Zu1VxQM4HjBxNlYqR__zPXMuDDgJuGuFl2NdksbYYZx7Meq4uqHFKe4ak3ShwQvuMGmRqocA3uDN1wlz8gBIKPg0FpiFOV2GfYo0gBTNed9UtoX8RAUzZyP01pNvM1LR-Fv6YsvfPZV3CWEzGmoLCcqg6LOFyk1JvaYCT3wFqQhALg-EcrjaHGLQEn7U-UoHdwNs1vdF_n3TMrfV5KPtJuerbAzDaWlugB8m8KL1phrQbWt`,
           Accept: "application/vnd.api+json",
           "Content-Type": "application/vnd.api+json",
         },
       }
     );
 
+
     if (!response.ok) {
       throw new Error(`LemonSqueezy API error: ${response.status}`);
     }
-
-    const data = await response.json();
+    
+    const data: LemonSqueezySubscriptionResponse = await response.json();
     return data;
+
   } catch (error) {
     console.error("Error fetching subscription from LemonSqueezy:", error);
     return null;
