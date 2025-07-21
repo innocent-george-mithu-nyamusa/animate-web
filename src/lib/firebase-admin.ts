@@ -1,5 +1,5 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
 // Initialize Firebase Admin SDK
 if (!getApps().length) {
@@ -7,7 +7,7 @@ if (!getApps().length) {
     credential: cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     }),
   });
 }
@@ -16,7 +16,7 @@ export const adminDb = getFirestore();
 
 // Firebase service functions
 export class FirebaseSubscriptionService {
-   db = adminDb;
+  db = adminDb;
 
   async updateUserSubscription({
     userId,
@@ -25,6 +25,7 @@ export class FirebaseSubscriptionService {
     subscriptionType,
     subscriptionStartDate,
     subscriptionEndDate,
+    totalUsd,
     additionalData = {},
   }: {
     userId: string;
@@ -33,11 +34,11 @@ export class FirebaseSubscriptionService {
     subscriptionType?: string;
     subscriptionStartDate?: Date;
     subscriptionEndDate?: Date;
+    totalUsd: number;
     additionalData?: Record<string, any>;
   }) {
     try {
-      const userDoc = this.db.collection('users').doc(userId);
-
+      const userDoc = this.db.collection("users").doc(userId);
       const subscriptionData = {
         isSubscribed,
         subscriptionId,
@@ -52,12 +53,21 @@ export class FirebaseSubscriptionService {
 
       // Update generations count based on subscription status
       if (isSubscribed) {
-        await this.setRemainingGenerations(userId, -1); // Unlimited
+        if (totalUsd == 499) {
+          await this.setRemainingGenerations(userId, 25);
+        } else if (totalUsd == 999) {
+          await this.setRemainingGenerations(userId, 125);
+        } else if (totalUsd == 1999) {
+          await this.setRemainingGenerations(userId, -1);
+        } else {
+          await this.setRemainingGenerations(userId, 0);
+        }
+        // Unlimited
       } else {
         await this.setRemainingGenerations(userId, 3); // Free tier
       }
 
-      console.log('Successfully updated subscription for user:', userId);
+      console.log("Successfully updated subscription for user:", userId);
     } catch (error) {
       throw new Error(`Failed to update user subscription: ${error}`);
     }
@@ -65,13 +75,19 @@ export class FirebaseSubscriptionService {
 
   async setRemainingGenerations(userId: string, count: number) {
     try {
-      await this.db.collection('users').doc(userId).set({
-        generations: {
-          remaining: count,
-          unlimited: count === -1,
-          updatedAt: new Date(),
-        },
-      }, { merge: true });
+      await this.db
+        .collection("users")
+        .doc(userId)
+        .set(
+          {
+            credits: {
+              remaining: count,
+              unlimited: count === -1,
+              updatedAt: new Date(),
+            },
+          },
+          { merge: true }
+        );
     } catch (error) {
       throw new Error(`Failed to update generations: ${error}`);
     }
@@ -103,7 +119,9 @@ export class FirebaseSubscriptionService {
     metadata?: Record<string, any>;
   }) {
     try {
-      const subscriptionDoc = this.db.collection('subscriptions').doc(subscriptionId);
+      const subscriptionDoc = this.db
+        .collection("subscriptions")
+        .doc(subscriptionId);
 
       const subscriptionData = {
         userId,
@@ -123,7 +141,7 @@ export class FirebaseSubscriptionService {
 
       await subscriptionDoc.set(subscriptionData, { merge: true });
 
-      console.log('Successfully created subscription record:', subscriptionId);
+      console.log("Successfully created subscription record:", subscriptionId);
     } catch (error) {
       throw new Error(`Failed to create subscription record: ${error}`);
     }
@@ -151,7 +169,9 @@ export class FirebaseSubscriptionService {
     metadata?: Record<string, any>;
   }) {
     try {
-      const transactionDoc = this.db.collection('transactions').doc(transactionId);
+      const transactionDoc = this.db
+        .collection("transactions")
+        .doc(transactionId);
 
       const transactionData = {
         userId,
@@ -168,7 +188,7 @@ export class FirebaseSubscriptionService {
 
       await transactionDoc.set(transactionData);
 
-      console.log('Successfully logged transaction:', transactionId);
+      console.log("Successfully logged transaction:", transactionId);
     } catch (error) {
       throw new Error(`Failed to log transaction: ${error}`);
     }
@@ -180,6 +200,7 @@ export class FirebaseSubscriptionService {
     pendingSubscriptionId,
     subscriptionStartDate,
     subscriptionEndDate,
+    total_usd,
     additionalData = {},
   }: {
     userId: string;
@@ -187,13 +208,17 @@ export class FirebaseSubscriptionService {
     pendingSubscriptionId: string;
     subscriptionStartDate?: Date;
     subscriptionEndDate?: Date;
+    total_usd: number;
     additionalData?: Record<string, any>;
   }) {
     try {
       // Get pending subscription data
-      const pendingDoc = await this.db.collection('subscriptions').doc(pendingSubscriptionId).get();
+      const pendingDoc = await this.db
+        .collection("subscriptions")
+        .doc(pendingSubscriptionId)
+        .get();
       if (!pendingDoc.exists) {
-        throw new Error('Pending subscription not found');
+        throw new Error("Pending subscription not found");
       }
 
       const pendingData = pendingDoc.data()!;
@@ -203,7 +228,7 @@ export class FirebaseSubscriptionService {
         userId,
         subscriptionId: actualSubscriptionId,
         variantId: pendingData.variantId,
-        status: 'active',
+        status: "active",
         amount: pendingData.amount,
         currency: pendingData.currency,
         interval: pendingData.interval,
@@ -217,41 +242,47 @@ export class FirebaseSubscriptionService {
         userId,
         isSubscribed: true,
         subscriptionId: actualSubscriptionId,
-        subscriptionType: this.extractSubscriptionTypeFromInterval(pendingData.interval),
+        subscriptionType: this.extractSubscriptionTypeFromInterval(
+          pendingData.interval
+        ),
         subscriptionStartDate,
         subscriptionEndDate,
+        totalUsd: total_usd,
         additionalData,
       });
 
       // Remove pending subscription record
-      await this.db.collection('subscriptions').doc(pendingSubscriptionId).delete();
+      await this.db
+        .collection("subscriptions")
+        .doc(pendingSubscriptionId)
+        .delete();
 
       // Remove pending subscription from user document
-      await this.db.collection('users').doc(userId).update({
+      await this.db.collection("users").doc(userId).update({
         pendingSubscription: null,
       });
 
-      console.log('Successfully activated subscription:', actualSubscriptionId);
+      console.log("Successfully activated subscription:", actualSubscriptionId);
     } catch (error) {
       throw new Error(`Failed to activate pending subscription: ${error}`);
     }
   }
 
-   extractSubscriptionTypeFromInterval(interval: string): string {
+  extractSubscriptionTypeFromInterval(interval: string): string {
     switch (interval.toLowerCase()) {
-      case 'yearly':
-      case 'annual':
-        return 'annual';
-      case 'monthly':
-        return 'monthly';
+      case "yearly":
+      case "annual":
+        return "annual";
+      case "monthly":
+        return "monthly";
       default:
-        return 'monthly';
+        return "monthly";
     }
   }
 
   async getUserDocument(userId: string) {
     try {
-      const userDoc = await this.db.collection('users').doc(userId).get();
+      const userDoc = await this.db.collection("users").doc(userId).get();
       return userDoc.exists ? userDoc.data() : null;
     } catch (error) {
       throw new Error(`Failed to get user document: ${error}`);
