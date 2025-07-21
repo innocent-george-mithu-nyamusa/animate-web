@@ -64,7 +64,7 @@ export class FirebaseSubscriptionService {
         }
         // Unlimited
       } else {
-        await this.setRemainingGenerations(userId, 3); // Free tier
+        await this.setRemainingGenerations(userId, 0); // Free tier
       }
 
       console.log("Successfully updated subscription for user:", userId);

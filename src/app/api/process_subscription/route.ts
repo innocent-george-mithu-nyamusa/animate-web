@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
       subscriptionId: subscriptionResponse.data.id,
       variantId: subscriptionData.variant_id.toString(),
       status: subscriptionData.status,
-      amount: 0, // You'll need to fetch price data separately
+      amount: body.data.attributes?.total_usd, // You'll need to fetch price data separately
       currency: body.data.attributes?.currency, // You'll need to fetch this from price data
       interval: "monthly", // You'll need to determine this from variant/price data
       customerEmail: subscriptionData.user_email,
