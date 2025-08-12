@@ -25,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <title>Animate Web Application</title>
+      
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
