@@ -35,11 +35,11 @@ const PrivacyPolicyPage: React.FC = () => {
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-4xl mx-auto px-4 py-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
+              <img 
+              src="/prod-logo.png"
+              alt="Animate Logo" 
+              className="w-10 h-10 rounded-xl object-contain"
+            />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Privacy Policy</h1>
                 <p className="text-gray-600">Animate - AI Image Stylizer</p>
