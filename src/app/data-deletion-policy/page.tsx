@@ -21,7 +21,7 @@ const DataDeletionPage = () => {
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center space-x-3">
             <img 
-              src="/logo.png" 
+              src="/prod-logo.png"
               alt="Animate Logo" 
               className="w-10 h-10 rounded-xl object-contain"
             />
@@ -230,7 +230,7 @@ const DataDeletionPage = () => {
                 <li>• Processing time is typically 2-3 business days after identity verification</li>
                 <li>• You'll need to create a new account if you want to use Animate again</li>
                 <li>• Some data may be retained for legal compliance as outlined above</li>
-                <li>• Contact us at <strong>privacy@animate-app.com</strong> if you have questions</li>
+                <li>• Contact us at <strong>consult@pixels.co.zw</strong> if you have questions</li>
               </ul>
             </div>
           </div>
@@ -241,9 +241,9 @@ const DataDeletionPage = () => {
           <p className="text-gray-600">
             This page is linked from the <strong>Animate</strong> app listing on Google Play Store
           </p>
-          <p className="text-sm text-gray-500 mt-2">
+          {/* <p className="text-sm text-gray-500 mt-2">
             Last updated: {new Date().toLocaleDateString()}
-          </p>
+          </p> */}
         </div>
       </div>
     </div>
