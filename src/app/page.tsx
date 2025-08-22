@@ -1,25 +1,47 @@
-
-"use client"
-import React, { useState, useEffect } from 'react';
-import { Play, Download, Sparkles, Palette, Zap, Star, ArrowRight, Check, Menu, X } from 'lucide-react';
+"use client";
+import React, { useState, useEffect } from "react";
+import {
+  Play,
+  Download,
+  Sparkles,
+  Palette,
+  Zap,
+  Star,
+  ArrowRight,
+  Check,
+  Menu,
+  X,
+} from "lucide-react";
 
 const AnimateLandingPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeStyle, setActiveStyle] = useState(0);
 
   const styles = [
-    { name: 'Anime', color: 'from-pink-500 to-purple-600', emoji: '🌸' },
-    { name: 'Studio Ghibli', color: 'from-green-500 to-blue-500', emoji: '🏰' },
-    { name: 'Cartoon', color: 'from-yellow-500 to-orange-500', emoji: '🎪' },
-    { name: 'Oil Painting', color: 'from-red-500 to-pink-500', emoji: '🖼️' },
-    { name: 'Sketch', color: 'from-gray-600 to-gray-800', emoji: '✏️' },
-    { name: 'Psychedelic', color: 'from-purple-500 to-pink-500', emoji: '🌈' }
+    { name: "Anime", color: "from-pink-500 to-purple-600", emoji: "🌸" },
+    { name: "Studio Ghibli", color: "from-green-500 to-blue-500", emoji: "🏰" },
+    { name: "Cartoon", color: "from-yellow-500 to-orange-500", emoji: "🎪" },
+    { name: "Oil Painting", color: "from-red-500 to-pink-500", emoji: "🖼️" },
+    { name: "Sketch", color: "from-gray-600 to-gray-800", emoji: "✏️" },
+    { name: "Psychedelic", color: "from-purple-500 to-pink-500", emoji: "🌈" },
   ];
 
   const features = [
-    { icon: Zap, title: 'Lightning Fast', desc: 'Transform images in under 30 seconds' },
-    { icon: Palette, title: '6 Art Styles', desc: 'From anime to oil painting effects' },
-    { icon: Sparkles, title: 'AI Powered', desc: 'Advanced Flux AI technology' },
+    {
+      icon: Zap,
+      title: "Lightning Fast",
+      desc: "Transform images in under 30 seconds",
+    },
+    {
+      icon: Palette,
+      title: "6 Art Styles",
+      desc: "From anime to oil painting effects",
+    },
+    {
+      icon: Sparkles,
+      title: "AI Powered",
+      desc: "Advanced Flux AI technology",
+    },
   ];
 
   useEffect(() => {
@@ -35,26 +57,44 @@ const AnimateLandingPage = () => {
       <nav className="relative z-50 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">A</span>
-            </div>
+            <img
+              src="/prod-logo.png"
+              alt="Animate Logo"
+              className="w-10 h-10 rounded-xl object-contain"
+            />
             <span className="text-2xl font-bold">Animate</span>
           </div>
-          
+
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="hover:text-pink-300 transition-colors">Features</a>
-            <a href="#styles" className="hover:text-pink-300 transition-colors">Styles</a>
-            <a href="#pricing" className="hover:text-pink-300 transition-colors">Pricing</a>
+            <a
+              href="#features"
+              className="hover:text-pink-300 transition-colors"
+            >
+              Features
+            </a>
+            <a href="#styles" className="hover:text-pink-300 transition-colors">
+              Styles
+            </a>
+            <a
+              href="#pricing"
+              className="hover:text-pink-300 transition-colors"
+            >
+              Pricing
+            </a>
             <button className="bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-2 rounded-full font-semibold hover:shadow-lg transition-all transform hover:scale-105">
               Download Now
             </button>
           </div>
 
-          <button 
+          <button
             className="md:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
 
@@ -62,9 +102,24 @@ const AnimateLandingPage = () => {
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-purple-900/95 backdrop-blur-md p-6 md:hidden">
             <div className="flex flex-col space-y-4">
-              <a href="#features" className="hover:text-pink-300 transition-colors">Features</a>
-              <a href="#styles" className="hover:text-pink-300 transition-colors">Styles</a>
-              <a href="#pricing" className="hover:text-pink-300 transition-colors">Pricing</a>
+              <a
+                href="#features"
+                className="hover:text-pink-300 transition-colors"
+              >
+                Features
+              </a>
+              <a
+                href="#styles"
+                className="hover:text-pink-300 transition-colors"
+              >
+                Styles
+              </a>
+              <a
+                href="#pricing"
+                className="hover:text-pink-300 transition-colors"
+              >
+                Pricing
+              </a>
               <button className="bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-2 rounded-full font-semibold">
                 Download Now
               </button>
@@ -84,13 +139,15 @@ const AnimateLandingPage = () => {
                   <span>AI-Powered Image Transformation</span>
                 </div>
                 <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                  Transform Your Photos into 
+                  Transform Your Photos into
                   <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
-                    {' '}Art
+                    {" "}
+                    Art
                   </span>
                 </h1>
                 <p className="text-xl text-gray-300 max-w-lg">
-                  Turn ordinary photos into stunning artwork with AI. Choose from 6 amazing styles and watch the magic happen in seconds.
+                  Turn ordinary photos into stunning artwork with AI. Choose
+                  from 6 amazing styles and watch the magic happen in seconds.
                 </p>
               </div>
 
@@ -108,15 +165,21 @@ const AnimateLandingPage = () => {
               <div className="flex items-center space-x-6 text-sm text-gray-300">
                 <div className="flex items-center space-x-2">
                   <div className="flex -space-x-2">
-                    {[1,2,3,4].map(i => (
-                      <div key={i} className="w-8 h-8 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full border-2 border-purple-900"></div>
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className="w-8 h-8 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full border-2 border-purple-900"
+                      ></div>
                     ))}
                   </div>
                   <span>10k+ users</span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  {[1,2,3,4,5].map(i => (
-                    <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star
+                      key={i}
+                      className="w-4 h-4 text-yellow-400 fill-current"
+                    />
                   ))}
                   <span className="ml-2">4.8 rating</span>
                 </div>
@@ -127,10 +190,12 @@ const AnimateLandingPage = () => {
             <div className="relative">
               <div className="relative bg-white/5 backdrop-blur-sm rounded-3xl p-8 border border-white/10">
                 <div className="text-center mb-6">
-                  <h3 className="text-2xl font-bold mb-2">Try Different Styles</h3>
+                  <h3 className="text-2xl font-bold mb-2">
+                    Try Different Styles
+                  </h3>
                   <p className="text-gray-300">See how your photos transform</p>
                 </div>
-                
+
                 {/* Style Selector */}
                 <div className="grid grid-cols-3 gap-3 mb-6">
                   {styles.map((style, index) => (
@@ -138,9 +203,9 @@ const AnimateLandingPage = () => {
                       key={index}
                       onClick={() => setActiveStyle(index)}
                       className={`p-3 rounded-xl transition-all transform hover:scale-105 ${
-                        activeStyle === index 
-                          ? `bg-gradient-to-r ${style.color} shadow-lg` 
-                          : 'bg-white/10 hover:bg-white/20'
+                        activeStyle === index
+                          ? `bg-gradient-to-r ${style.color} shadow-lg`
+                          : "bg-white/10 hover:bg-white/20"
                       }`}
                     >
                       <div className="text-2xl mb-1">{style.emoji}</div>
@@ -158,7 +223,9 @@ const AnimateLandingPage = () => {
                 </div>
 
                 <div className="text-center">
-                  <div className={`inline-flex items-center space-x-2 bg-gradient-to-r ${styles[activeStyle].color} px-4 py-2 rounded-full text-sm font-semibold`}>
+                  <div
+                    className={`inline-flex items-center space-x-2 bg-gradient-to-r ${styles[activeStyle].color} px-4 py-2 rounded-full text-sm font-semibold`}
+                  >
                     <Sparkles className="w-4 h-4" />
                     <span>{styles[activeStyle].name} Style Active</span>
                   </div>
@@ -181,13 +248,17 @@ const AnimateLandingPage = () => {
               Powered by Advanced AI
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Experience the future of photo editing with cutting-edge artificial intelligence
+              Experience the future of photo editing with cutting-edge
+              artificial intelligence
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-pink-500/50 transition-all group">
+              <div
+                key={index}
+                className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-pink-500/50 transition-all group"
+              >
                 <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   <feature.icon className="w-6 h-6" />
                 </div>
@@ -207,17 +278,23 @@ const AnimateLandingPage = () => {
               6 Amazing Art Styles
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              From anime to oil paintings, transform your photos into any artistic style
+              From anime to oil paintings, transform your photos into any
+              artistic style
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {styles.map((style, index) => (
               <div key={index} className="group cursor-pointer">
-                <div className={`bg-gradient-to-r ${style.color} rounded-2xl p-8 text-center transform group-hover:scale-105 transition-all`}>
+                <div
+                  className={`bg-gradient-to-r ${style.color} rounded-2xl p-8 text-center transform group-hover:scale-105 transition-all`}
+                >
                   <div className="text-4xl mb-4">{style.emoji}</div>
                   <h3 className="text-2xl font-bold mb-2">{style.name}</h3>
-                  <p className="text-white/80">Perfect for creating stunning {style.name.toLowerCase()} artwork</p>
+                  <p className="text-white/80">
+                    Perfect for creating stunning {style.name.toLowerCase()}{" "}
+                    artwork
+                  </p>
                 </div>
               </div>
             ))}
@@ -271,7 +348,9 @@ const AnimateLandingPage = () => {
               </div>
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-bold mb-2">Premium</h3>
-                <div className="text-4xl font-bold mb-4">$9.99<span className="text-lg text-gray-300">/mo</span></div>
+                <div className="text-4xl font-bold mb-4">
+                  $9.99<span className="text-lg text-gray-300">/mo</span>
+                </div>
                 <p className="text-gray-300">Unlimited creative freedom</p>
               </div>
               <ul className="space-y-4 mb-8">
@@ -311,7 +390,8 @@ const AnimateLandingPage = () => {
             Ready to Transform Your Photos?
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of users creating amazing art with AI. Download Animate today and start your creative journey.
+            Join thousands of users creating amazing art with AI. Download
+            Animate today and start your creative journey.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button className="bg-gradient-to-r from-pink-500 to-purple-600 px-8 py-4 rounded-full font-semibold text-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center justify-center space-x-2">
@@ -338,37 +418,70 @@ const AnimateLandingPage = () => {
                 <span className="text-xl font-bold">Animate</span>
               </div>
               <p className="text-gray-300 text-sm">
-                Transform your photos into stunning artwork with the power of AI.
+                Transform your photos into stunning artwork with the power of
+                AI.
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Gallery</a></li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Pricing
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Gallery
+                  </a>
+                </li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Support</h4>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Data Deletion</a></li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Help Center
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Contact Us
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Data Deletion
+                  </a>
+                </li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Terms of Service
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-white/10 mt-8 pt-8 text-center text-sm text-gray-400">
             <p>&copy; 2025 Animate. All rights reserved.</p>
           </div>
