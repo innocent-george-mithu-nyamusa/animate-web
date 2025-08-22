@@ -81,6 +81,12 @@ const AnimateLandingPage = () => {
             >
               Pricing
             </a>
+            <a
+              href="/privacy-policy"
+              className="hover:text-pink-300 transition-colors"
+            >
+              Privacy policy
+            </a>
             <button className="bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-2 rounded-full font-semibold hover:shadow-lg transition-all transform hover:scale-105">
               Download Now
             </button>
@@ -120,6 +126,12 @@ const AnimateLandingPage = () => {
               >
                 Pricing
               </a>
+              <a
+              href="/privacy-policy"
+              className="hover:text-pink-300 transition-colors"
+            >
+              Privacy policy
+            </a>
               <button className="bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-2 rounded-full font-semibold">
                 Download Now
               </button>
