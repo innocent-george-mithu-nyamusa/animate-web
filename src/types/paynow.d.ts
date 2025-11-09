@@ -7,6 +7,7 @@ declare module 'paynow' {
   export class Paynow {
     constructor(integrationId: string, integrationKey: string, returnUrl: string, resultUrl: string);
 
+    
     createPayment(reference: string, email: string): Payment;
     send(payment: Payment): Promise<PaymentResponse>;
     sendMobile(payment: Payment, phone: string, method: string): Promise<PaymentResponse>;
