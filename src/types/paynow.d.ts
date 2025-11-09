@@ -10,6 +10,7 @@ declare module 'paynow' {
     createPayment(reference: string, email: string): Payment;
     send(payment: Payment): Promise<PaymentResponse>;
     sendMobile(payment: Payment, phone: string, method: string): Promise<PaymentResponse>;
+    pollTransaction(pollUrl: string): Promise<PaymentStatus>;
     processStatusUpdate(data: Record<string, string>): StatusUpdate;
   }
 
@@ -25,6 +26,13 @@ declare module 'paynow' {
     pollUrl?: string;
     error?: string;
     instructions?: string;
+  }
+
+  export interface PaymentStatus {
+    paid(): boolean;
+    status: string;
+    amount?: string;
+    reference?: string;
   }
 
   export interface StatusUpdate {

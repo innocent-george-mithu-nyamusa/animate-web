@@ -55,13 +55,13 @@ export class PaynowService {
     resultUrl: string,
     returnUrl: string
   ) {
-    this.paynow = new Paynow(integrationId, integrationKey);
+    this.paynow = new Paynow(integrationId, integrationKey, returnUrl, resultUrl);
     this.resultUrl = resultUrl;
     this.returnUrl = returnUrl;
 
-    // Set URLs for callbacks
-    this.paynow.resultUrl = resultUrl;
-    this.paynow.returnUrl = returnUrl;
+    // // Set URLs for callbacks
+    // this.paynow.resultUrl = resultUrl;
+    // this.paynow.returnUrl = returnUrl;
   }
 
   /**
