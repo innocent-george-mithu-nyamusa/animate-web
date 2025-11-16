@@ -771,7 +771,7 @@ export default function AnimateSPA() {
                     <button
                       key={style.id}
                       onClick={() => setSelectedStyle(style)}
-                      className={`w-full text-left p-4 z-10 rounded-xl transition-all transform hover:scale-[1.02] ${
+                      className={`w-full text-left p-4  rounded-xl transition-all transform hover:scale-[1.02] ${
                         selectedStyle.id === style.id
                           ? `bg-gradient-to-r ${style.color} shadow-lg`
                           : "bg-white/5 hover:bg-white/10"
@@ -797,7 +797,7 @@ export default function AnimateSPA() {
               {/* Main Canvas Area */}
               <div className="flex flex-col space-y-4">
                 {/* Mobile Style Selector Dropdown */}
-                <div className="lg:hidden bg-black/30 backdrop-blur-md rounded-2xl border border-white/10 p-4" ref={styleDropdownRef}>
+                <div className="lg:hidden bg-black/30 backdrop-blur-md rounded-2xl border border-white/10 p-4 relative z-50" ref={styleDropdownRef}>
                   <div className="relative">
                     <button
                       onClick={() => setShowStyleDropdown(!showStyleDropdown)}
@@ -815,7 +815,7 @@ export default function AnimateSPA() {
 
                     {/* Dropdown Menu */}
                     {showStyleDropdown && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl max-h-[60vh] overflow-y-auto z-50">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl max-h-[60vh] overflow-y-auto z-[100]">
                         {STYLES.map((style) => (
                           <button
                             key={style.id}
@@ -823,7 +823,7 @@ export default function AnimateSPA() {
                               setSelectedStyle(style);
                               setShowStyleDropdown(false);
                             }}
-                            className={`w-full text-left p-4 transition-all border-b border-white/10 last:border-b-0 ${
+                            className={`w-full z-1000 text-left p-4 transition-all border-b border-white/10 last:border-b-0 ${
                               selectedStyle.id === style.id
                                 ? `bg-gradient-to-r ${style.color}`
                                 : "hover:bg-white/10"
