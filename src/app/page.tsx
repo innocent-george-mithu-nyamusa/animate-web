@@ -16,6 +16,7 @@ import {
   Phone,
   ChevronDown,
   Menu,
+  Download,
 } from "lucide-react";
 import { firebaseAuth } from "@/lib/firebase-client";
 import type { User } from "firebase/auth";
@@ -357,6 +358,18 @@ export default function AnimateSPA() {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Download styled image
+  const handleDownload = () => {
+    if (!styledImage) return;
+
+    const link = document.createElement('a');
+    link.href = styledImage;
+    link.download = `animate-${selectedStyle.id}-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Handle authentication
@@ -933,18 +946,30 @@ export default function AnimateSPA() {
                         </span>
                       </div>
 
-                      <button
-                        onClick={handleStyleImage}
-                        disabled={isProcessing}
-                        className={`px-8 py-3 rounded-lg font-semibold transition-all transform flex items-center space-x-2 ${
-                          isProcessing
-                            ? "bg-gray-600 cursor-not-allowed"
-                            : `bg-gradient-to-r ${selectedStyle.color} hover:shadow-lg hover:scale-105`
-                        }`}
-                      >
-                        <Sparkles className="w-5 h-5" />
-                        <span>{isProcessing ? "Processing..." : "Apply Style"}</span>
-                      </button>
+                      <div className="flex items-center gap-3">
+                        {styledImage && !isProcessing && (
+                          <button
+                            onClick={handleDownload}
+                            className="px-6 py-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 font-semibold transition-all transform hover:shadow-lg hover:scale-105 flex items-center space-x-2"
+                          >
+                            <Download className="w-5 h-5" />
+                            <span>Download</span>
+                          </button>
+                        )}
+
+                        <button
+                          onClick={handleStyleImage}
+                          disabled={isProcessing}
+                          className={`px-8 py-3 rounded-lg font-semibold transition-all transform flex items-center space-x-2 ${
+                            isProcessing
+                              ? "bg-gray-600 cursor-not-allowed"
+                              : `bg-gradient-to-r ${selectedStyle.color} hover:shadow-lg hover:scale-105`
+                          }`}
+                        >
+                          <Sparkles className="w-5 h-5" />
+                          <span>{isProcessing ? "Processing..." : "Apply Style"}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
