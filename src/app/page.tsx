@@ -15,6 +15,7 @@ import {
   CreditCard,
   Phone,
   ChevronDown,
+  Menu,
 } from "lucide-react";
 import { firebaseAuth } from "@/lib/firebase-client";
 import type { User } from "firebase/auth";
@@ -174,6 +175,8 @@ export default function AnimateSPA() {
   const [checkoutEmail, setCheckoutEmail] = useState("");
   const [checkoutPhone, setCheckoutPhone] = useState("");
   const [showPolicyDropdown, setShowPolicyDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showStyleDropdown, setShowStyleDropdown] = useState(false);
   const [userSubscription, setUserSubscription] = useState<{
     tier: string;
     status: string;
@@ -181,6 +184,7 @@ export default function AnimateSPA() {
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const styleDropdownRef = useRef<HTMLDivElement>(null);
 
   // Listen for auth state changes
   useEffect(() => {
@@ -240,13 +244,16 @@ export default function AnimateSPA() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowPolicyDropdown(false);
       }
+      if (styleDropdownRef.current && !styleDropdownRef.current.contains(event.target as Node)) {
+        setShowStyleDropdown(false);
+      }
     };
 
-    if (showPolicyDropdown) {
+    if (showPolicyDropdown || showStyleDropdown) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [showPolicyDropdown]);
+  }, [showPolicyDropdown, showStyleDropdown]);
 
   // Reset payment method to ecocash if currency is ZWG and card is selected
   useEffect(() => {
@@ -290,6 +297,20 @@ export default function AnimateSPA() {
   const handleStyleImage = async () => {
     if (!uploadedImage) return;
 
+    // Check if user is signed in
+    // if (!user) {
+    //   alert('Please sign in to apply styles to your images.');
+    //   setShowAuth(true);
+    //   return;
+    // }
+
+    // Check if user has credits
+    if (!userSubscription || userSubscription.credits <= 0) {
+      alert('You have no credits. Please upgrade your plan to continue.');
+      setView('pricing');
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
@@ -317,6 +338,15 @@ export default function AnimateSPA() {
 
         // Log the AI description for debugging
         console.log('AI Style Description:', data.description);
+
+        // Deduct credit after successful processing
+        // In a real implementation, this would be done server-side
+        if (userSubscription) {
+          setUserSubscription({
+            ...userSubscription,
+            credits: userSubscription.credits - 1
+          });
+        }
       } else {
         throw new Error(data.error || 'Processing failed');
       }
@@ -465,7 +495,7 @@ export default function AnimateSPA() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-950 text-white">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
@@ -479,7 +509,8 @@ export default function AnimateSPA() {
               <span className="text-2xl font-bold">Animate</span>
             </div>
 
-            <div className="flex items-center space-x-4">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               <button
                 onClick={() => setView("app")}
                 className={`px-4 py-2 rounded-lg transition-colors ${
@@ -570,7 +601,7 @@ export default function AnimateSPA() {
                   </div>
                   <button
                     onClick={() => setShowAuth(true)}
-                    className="bg-gradient-to-r from-pink-500 to-purple-600 px-6 py-2 rounded-full font-semibold hover:shadow-lg transition-all flex items-center space-x-2"
+                    className="bg-gradient-to-r from-pink-500 to-purple-700 px-6 py-2 rounded-full font-semibold hover:shadow-lg transition-all flex items-center space-x-2"
                   >
                     <LogIn className="w-4 h-4" />
                     <span>Sign In</span>
@@ -578,8 +609,121 @@ export default function AnimateSPA() {
                 </div>
               )}
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {showMobileMenu && (
+          <div className="md:hidden bg-black/95 backdrop-blur-md border-t border-white/10">
+            <div className="px-4 py-4 space-y-3">
+              {/* User Info (Mobile) */}
+              {user ? (
+                <div className="pb-3 border-b border-white/10">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      userSubscription?.tier === "premium"
+                        ? "bg-gradient-to-r from-yellow-500 to-orange-500"
+                        : userSubscription?.tier === "standard"
+                        ? "bg-gradient-to-r from-blue-500 to-purple-500"
+                        : "bg-gray-600"
+                    }`}>
+                      {userSubscription?.tier === "premium" && <Crown className="w-3 h-3 inline mr-1" />}
+                      {userSubscription?.tier ? userSubscription.tier.charAt(0).toUpperCase() + userSubscription.tier.slice(1) : "Free"}
+                    </div>
+                  </div>
+                  <div className="text-sm font-semibold">{user.displayName || "User"}</div>
+                  <div className="text-xs text-gray-400">{user.email}</div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    {userSubscription?.credits || 0} credits remaining
+                  </div>
+                </div>
+              ) : (
+                <div className="pb-3 border-b border-white/10">
+                  <div className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700 inline-block mb-2">
+                    Anonymous
+                  </div>
+                  <div className="text-sm text-gray-400">Sign in to get started</div>
+                </div>
+              )}
+
+              {/* Navigation Links */}
+              <button
+                onClick={() => {
+                  setView("app");
+                  setShowMobileMenu(false);
+                }}
+                className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  view === "app" ? "bg-white/20" : "hover:bg-white/10"
+                }`}
+              >
+                App
+              </button>
+
+              {(!userSubscription || userSubscription.tier === "free") && (
+                <button
+                  onClick={() => {
+                    setView("pricing");
+                    setShowMobileMenu(false);
+                  }}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                    view === "pricing" ? "bg-white/20" : "hover:bg-white/10"
+                  }`}
+                >
+                  Pricing
+                </button>
+              )}
+
+              {/* Policies */}
+              <a
+                href="/privacy-policy"
+                className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Privacy Policy
+              </a>
+              <a
+                href="/data-deletion-policy"
+                className="block px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                Data Deletion Policy
+              </a>
+
+              {/* Auth Button */}
+              {user ? (
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setShowMobileMenu(false);
+                  }}
+                  className="w-full bg-white/10 hover:bg-white/20 px-4 py-3 rounded-lg transition-all flex items-center space-x-2 justify-center"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowAuth(true);
+                    setShowMobileMenu(false);
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-700 px-4 py-3 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2 justify-center"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Main Content */}
@@ -587,8 +731,8 @@ export default function AnimateSPA() {
         {view === "app" ? (
           <div className="max-w-7xl mx-auto h-[calc(100vh-7rem)]">
             <div className="grid lg:grid-cols-[400px_1fr] gap-6 h-full">
-              {/* Left Sidebar - Style Gallery */}
-              <div className="bg-black/30 backdrop-blur-md rounded-2xl border border-white/10 p-6 overflow-y-auto">
+              {/* Left Sidebar - Style Gallery (Desktop Only) */}
+              <div className="hidden lg:block bg-black/30 backdrop-blur-md rounded-2xl border border-white/10 p-6 overflow-y-auto">
                 <h2 className="text-2xl font-bold mb-4 flex items-center">
                   <Sparkles className="w-6 h-6 mr-2 text-yellow-400" />
                   Choose Style
@@ -613,7 +757,7 @@ export default function AnimateSPA() {
                           </div>
                         </div>
                         {selectedStyle.id === style.id && (
-                          <Check className="w-5 h-5 flex-shrink-0" />
+                          <Check className="w-5 h-5 shrink-0" />
                         )}
                       </div>
                     </button>
@@ -623,6 +767,57 @@ export default function AnimateSPA() {
 
               {/* Main Canvas Area */}
               <div className="flex flex-col space-y-4">
+                {/* Mobile Style Selector Dropdown */}
+                <div className="lg:hidden bg-black/30 backdrop-blur-md rounded-2xl border border-white/10 p-4" ref={styleDropdownRef}>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowStyleDropdown(!showStyleDropdown)}
+                      className={`w-full flex items-center justify-between p-4 rounded-xl transition-all bg-gradient-to-r ${selectedStyle.color}`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <span className="text-2xl">{selectedStyle.icon}</span>
+                        <div className="text-left">
+                          <div className="font-semibold">{selectedStyle.name}</div>
+                          <div className="text-xs text-white/80">Tap to change style</div>
+                        </div>
+                      </div>
+                      <ChevronDown className={`w-5 h-5 transition-transform ${showStyleDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {showStyleDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-black/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl max-h-[60vh] overflow-y-auto z-50">
+                        {STYLES.map((style) => (
+                          <button
+                            key={style.id}
+                            onClick={() => {
+                              setSelectedStyle(style);
+                              setShowStyleDropdown(false);
+                            }}
+                            className={`w-full text-left p-4 transition-all border-b border-white/10 last:border-b-0 ${
+                              selectedStyle.id === style.id
+                                ? `bg-gradient-to-r ${style.color}`
+                                : "hover:bg-white/10"
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <span className="text-2xl">{style.icon}</span>
+                              <div className="flex-1">
+                                <div className="font-semibold">{style.name}</div>
+                                <div className="text-xs text-white/70 line-clamp-1">
+                                  {style.prompt.substring(0, 40)}...
+                                </div>
+                              </div>
+                              {selectedStyle.id === style.id && (
+                                <Check className="w-5 h-5 shrink-0" />
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
                 {/* Image Upload/Display Area */}
                 <div className="bg-black/30 backdrop-blur-md rounded-2xl border border-white/10 p-6 flex-1 flex flex-col">
                   {!uploadedImage ? (
@@ -630,7 +825,7 @@ export default function AnimateSPA() {
                       onDrop={handleDrop}
                       onDragOver={(e) => e.preventDefault()}
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex-1 border-2 border-dashed border-white/30 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-pink-500/50 hover:bg-white/5 transition-all"
+                      className="flex-1 border-2 border-dashed border-white/30 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-500/50 hover:bg-white/5 transition-all"
                     >
                       <Upload className="w-16 h-16 mb-4 text-gray-400" />
                       <p className="text-xl font-semibold mb-2">
@@ -674,8 +869,8 @@ export default function AnimateSPA() {
                         {isProcessing ? (
                           <div className="w-full h-full flex flex-col items-center justify-center">
                             <div className="relative">
-                              <div className="w-16 h-16 border-4 border-pink-500/30 border-t-pink-500 rounded-full animate-spin"></div>
-                              <Sparkles className="w-8 h-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-pink-500 animate-pulse" />
+                              <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                              <Sparkles className="w-8 h-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-purple-500 animate-pulse" />
                             </div>
                             <p className="mt-4 text-gray-300">
                               Applying {selectedStyle.name} style...
@@ -753,7 +948,7 @@ export default function AnimateSPA() {
                   onClick={() => setCurrency("USD")}
                   className={`px-6 py-2 rounded-full transition-all ${
                     currency === "USD"
-                      ? "bg-gradient-to-r from-pink-500 to-purple-600"
+                      ? "bg-gradient-to-r from-pink-500 to-purple-700"
                       : "hover:bg-white/10"
                   }`}
                 >
@@ -763,7 +958,7 @@ export default function AnimateSPA() {
                   onClick={() => setCurrency("ZWG")}
                   className={`px-6 py-2 rounded-full transition-all ${
                     currency === "ZWG"
-                      ? "bg-gradient-to-r from-pink-500 to-purple-600"
+                      ? "bg-gradient-to-r from-pink-500 to-purple-700"
                       : "hover:bg-white/10"
                   }`}
                 >
@@ -778,12 +973,12 @@ export default function AnimateSPA() {
                   key={tier.id}
                   className={`bg-black/30 backdrop-blur-md rounded-2xl border p-6 flex flex-col ${
                     tier.popular
-                      ? "border-pink-500/50 shadow-lg shadow-pink-500/20 scale-105"
+                      ? "border-purple-500/50 shadow-lg shadow-purple-500/20 scale-105"
                       : "border-white/10"
                   }`}
                 >
                   {tier.popular && (
-                    <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-center py-2 -mt-6 -mx-6 mb-4 rounded-t-2xl font-semibold">
+                    <div className="bg-gradient-to-r from-pink-500 to-purple-700 text-center py-2 -mt-6 -mx-6 mb-4 rounded-t-2xl font-semibold">
                       Most Popular
                     </div>
                   )}
@@ -812,7 +1007,7 @@ export default function AnimateSPA() {
                     onClick={() => handleCheckout(tier)}
                     className={`w-full py-3 rounded-lg font-semibold transition-all transform hover:scale-105 ${
                       tier.popular
-                        ? "bg-gradient-to-r from-pink-500 to-purple-600 shadow-lg"
+                        ? "bg-gradient-to-r from-pink-500 to-purple-700 shadow-lg"
                         : "border border-white/20 hover:bg-white/10"
                     }`}
                   >
@@ -828,7 +1023,7 @@ export default function AnimateSPA() {
       {/* Checkout Modal */}
       {showCheckout && selectedTier && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl border border-white/20 p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-gradient-to-br from-purple-900 to-purple-950 rounded-2xl border border-white/20 p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">Checkout</h2>
               <button
@@ -868,7 +1063,7 @@ export default function AnimateSPA() {
                   onClick={() => setPaymentMethod("ecocash")}
                   className={`w-full p-4 rounded-lg border transition-all flex items-center justify-between ${
                     paymentMethod === "ecocash"
-                      ? "border-pink-500 bg-pink-500/20"
+                      ? "border-purple-500 bg-purple-500/20"
                       : "border-white/20 hover:bg-white/5"
                   }`}
                 >
@@ -880,7 +1075,7 @@ export default function AnimateSPA() {
                     </div>
                   </div>
                   {paymentMethod === "ecocash" && (
-                    <Check className="w-5 h-5 text-pink-500" />
+                    <Check className="w-5 h-5 text-purple-500" />
                   )}
                 </button>
 
@@ -889,7 +1084,7 @@ export default function AnimateSPA() {
                   onClick={() => setPaymentMethod("onemoney")}
                   className={`w-full p-4 rounded-lg border transition-all flex items-center justify-between ${
                     paymentMethod === "onemoney"
-                      ? "border-pink-500 bg-pink-500/20"
+                      ? "border-purple-500 bg-purple-500/20"
                       : "border-white/20 hover:bg-white/5"
                   }`}
                 >
@@ -901,7 +1096,7 @@ export default function AnimateSPA() {
                     </div>
                   </div>
                   {paymentMethod === "onemoney" && (
-                    <Check className="w-5 h-5 text-pink-500" />
+                    <Check className="w-5 h-5 text-purple-500" />
                   )}
                 </button>
 
@@ -912,7 +1107,7 @@ export default function AnimateSPA() {
                     onClick={() => setPaymentMethod("card")}
                     className={`w-full p-4 rounded-lg border transition-all flex items-center justify-between ${
                       paymentMethod === "card"
-                        ? "border-pink-500 bg-pink-500/20"
+                        ? "border-purple-500 bg-purple-500/20"
                         : "border-white/20 hover:bg-white/5"
                     }`}
                   >
@@ -924,7 +1119,7 @@ export default function AnimateSPA() {
                       </div>
                     </div>
                     {paymentMethod === "card" && (
-                      <Check className="w-5 h-5 text-pink-500" />
+                      <Check className="w-5 h-5 text-purple-500" />
                     )}
                   </button>
                 )}
@@ -943,7 +1138,7 @@ export default function AnimateSPA() {
                   value={checkoutEmail}
                   onChange={(e) => setCheckoutEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-pink-500 transition-colors"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                 />
               </div>
               <div>
@@ -956,7 +1151,7 @@ export default function AnimateSPA() {
                   value={checkoutPhone}
                   onChange={(e) => setCheckoutPhone(e.target.value)}
                   required
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-pink-500 transition-colors"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                 />
               </div>
 
@@ -964,7 +1159,7 @@ export default function AnimateSPA() {
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-4 rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-700 py-4 rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {authLoading ? "Processing..." : "Complete Payment"}
               </button>
@@ -980,7 +1175,7 @@ export default function AnimateSPA() {
       {/* Auth Modal */}
       {showAuth && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl border border-white/20 p-8 max-w-md w-full">
+          <div className="bg-gradient-to-br from-purple-900 to-purple-950 rounded-2xl border border-white/20 p-8 max-w-md w-full">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">
                 {authMode === "signin" ? "Sign In" : "Create Account"}
@@ -1006,7 +1201,7 @@ export default function AnimateSPA() {
                       placeholder="John Doe"
                       value={authDisplayName}
                       onChange={(e) => setAuthDisplayName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-pink-500 transition-colors"
+                      className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                     />
                   </div>
                 </div>
@@ -1023,7 +1218,7 @@ export default function AnimateSPA() {
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     required
-                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-pink-500 transition-colors"
+                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                   />
                 </div>
               </div>
@@ -1040,7 +1235,7 @@ export default function AnimateSPA() {
                     onChange={(e) => setAuthPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-pink-500 transition-colors"
+                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:border-purple-500 transition-colors"
                   />
                 </div>
               </div>
@@ -1048,7 +1243,7 @@ export default function AnimateSPA() {
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 py-4 rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-700 py-4 rounded-lg font-semibold hover:shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {authLoading ? "Loading..." : authMode === "signin" ? "Sign In" : "Create Account"}
               </button>
@@ -1097,7 +1292,7 @@ export default function AnimateSPA() {
                   Don't have an account?{" "}
                   <button
                     onClick={() => setAuthMode("signup")}
-                    className="text-pink-400 hover:text-pink-300 font-semibold"
+                    className="text-purple-400 hover:text-purple-300 font-semibold"
                   >
                     Sign up
                   </button>
@@ -1107,7 +1302,7 @@ export default function AnimateSPA() {
                   Already have an account?{" "}
                   <button
                     onClick={() => setAuthMode("signin")}
-                    className="text-pink-400 hover:text-pink-300 font-semibold"
+                    className="text-purple-400 hover:text-purple-300 font-semibold"
                   >
                     Sign in
                   </button>
