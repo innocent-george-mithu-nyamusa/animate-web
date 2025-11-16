@@ -420,6 +420,21 @@ export default function AnimateSPA() {
 
   // Handle checkout
   const handleCheckout = (tier: typeof PRICING_TIERS[0]) => {
+    // If free tier and user not logged in, show sign up modal
+    if (tier.usd === 0 && !user) {
+      setAuthMode('signup');
+      setShowAuth(true);
+      return;
+    }
+
+    // If free tier and user is logged in, they already have it
+    if (tier.usd === 0 && user) {
+      alert('You already have the free plan!');
+      setView('app');
+      return;
+    }
+
+    // For paid tiers, show checkout modal
     setSelectedTier(tier);
     setShowCheckout(true);
   };
