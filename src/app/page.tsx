@@ -329,6 +329,7 @@ export default function AnimateSPA() {
         throw new Error('Failed to process image');
       }
 
+
       const data = await response.json();
 
       if (data.success) {
@@ -337,7 +338,7 @@ export default function AnimateSPA() {
         setStyledImage(data.styledImage || uploadedImage);
 
         // Log the AI description for debugging
-        console.log('AI Style Description:', data.description);
+        console.log('Style Description:', data.description);
 
         // Deduct credit after successful processing
         // In a real implementation, this would be done server-side
