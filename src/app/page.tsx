@@ -771,7 +771,7 @@ export default function AnimateSPA() {
                     <button
                       key={style.id}
                       onClick={() => setSelectedStyle(style)}
-                      className={`w-full text-left p-4 rounded-xl transition-all transform hover:scale-[1.02] ${
+                      className={`w-full text-left p-4 z-10 rounded-xl transition-all transform hover:scale-[1.02] ${
                         selectedStyle.id === style.id
                           ? `bg-gradient-to-r ${style.color} shadow-lg`
                           : "bg-white/5 hover:bg-white/10"
