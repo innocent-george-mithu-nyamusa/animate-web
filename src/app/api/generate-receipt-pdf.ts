@@ -121,7 +121,7 @@ function generateReceiptHTML(data: any): string {
       <title>Receipt - ${data.orderNumber}</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; margin-bottom: 30px; }
+        .header { background: gradient-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; margin-bottom: 30px; }
         .header h1 { margin: 0; font-size: 32px; }
         .header p { margin: 5px 0 0 0; opacity: 0.8; }
         .receipt-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
