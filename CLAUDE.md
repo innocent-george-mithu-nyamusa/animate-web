@@ -128,10 +128,11 @@ Development server runs on http://localhost:3000
    - `amount` and `currency`
    - `phoneNumber` (required for mobile payments)
    - `email` (required for all payments)
-3. Backend routes all payments through Paynow:
+3. Backend selects appropriate Paynow credentials based on currency (USD or ZWG)
+4. Backend routes all payments through Paynow:
    - **Mobile money** (ecocash/onemoney): Initiates mobile payment via Paynow
    - **Card**: Returns redirect URL to Paynow payment page
-4. Returns payment reference/instructions or redirect URL
+5. Returns payment reference/instructions or redirect URL
 
 **Webhook Processing:**
 - Paynow: `POST /api/webhooks/paynow` - Receives payment notifications for all payment methods
@@ -176,8 +177,10 @@ Required in `.env`:
 - `NEXT_PUBLIC_FIREBASE_APP_ID` - Client SDK app ID
 
 **Paynow (handles all payments):**
-- `PAYNOW_INTEGRATION_ID` - Paynow integration ID
-- `PAYNOW_INTEGRATION_KEY` - Paynow integration key
+- `PAYNOW_INTEGRATION_ID` - Paynow integration ID for USD payments
+- `PAYNOW_INTEGRATION_KEY` - Paynow integration key for USD payments
+- `PAYNOW_ZWG_INTEGRATION_ID` - Paynow integration ID for ZWG payments
+- `PAYNOW_ZWG_INTEGRATION_KEY` - Paynow integration key for ZWG payments
 - `PAYNOW_RESULT_URL` - Webhook URL for payment results
 - `PAYNOW_RETURN_URL` - Return URL after payment
 
