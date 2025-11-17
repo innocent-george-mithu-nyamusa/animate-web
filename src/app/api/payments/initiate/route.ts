@@ -30,10 +30,27 @@ export async function POST(req: NextRequest) {
     const authService = new FirebaseAuthService();
     const verifiedToken = await authService.verifyIdToken(idToken);
 
-    // Initialize Paynow service
+    // Select Paynow credentials based on currency
+    const isZWG = currency === "ZWG";
+    const integrationId = isZWG
+      ? process.env.PAYNOW_ZWG_INTEGRATION_ID || ""
+      : process.env.PAYNOW_INTEGRATION_ID || "";
+    const integrationKey = isZWG
+      ? process.env.PAYNOW_ZWG_INTEGRATION_KEY || ""
+      : process.env.PAYNOW_INTEGRATION_KEY || "";
+
+    // Validate that credentials exist for the selected currency
+    if (!integrationId || !integrationKey) {
+      return NextResponse.json(
+        { error: `Paynow credentials not configured for ${currency} payments` },
+        { status: 500 }
+      );
+    }
+
+    // Initialize Paynow service with currency-specific credentials
     const paynowService = new PaynowService(
-      process.env.PAYNOW_INTEGRATION_ID || "",
-      process.env.PAYNOW_INTEGRATION_KEY || "",
+      integrationId,
+      integrationKey,
       process.env.PAYNOW_RESULT_URL ||
         `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/paynow`,
       process.env.PAYNOW_RETURN_URL ||
