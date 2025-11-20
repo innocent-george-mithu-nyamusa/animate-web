@@ -322,20 +322,49 @@ export class FirebaseSubscriptionService {
   }
 
   /**
-   * Mark subscription as expired
+   * Mark subscription as expired and reset user to free tier
    */
   async expireSubscription(subscriptionId: string) {
-    await this.updateSubscriptionStatus(subscriptionId, "expired");
+    try {
+      const subscriptionDoc = await this.db
+        .collection("subscriptions")
+        .doc(subscriptionId)
+        .get();
 
-    // Reset user to free tier
-    const subscriptionDoc = await this.db
-      .collection("subscriptions")
-      .doc(subscriptionId)
-      .get();
+      if (!subscriptionDoc.exists) {
+        console.warn(`Subscription ${subscriptionId} not found`);
+        return;
+      }
 
-    if (subscriptionDoc.exists) {
       const data = subscriptionDoc.data()!;
-      await this.setGenerationCredits(data.userId, "free");
+      const userId = data.userId;
+
+      // Update subscription status to expired
+      await this.db.collection("subscriptions").doc(subscriptionId).update({
+        status: "expired",
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Reset user to free tier with proper subscription info
+      await this.updateUserSubscription({
+        userId,
+        subscriptionId: "free_tier",
+        tier: "free",
+        status: "active",
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+        amount: 0,
+        currency: "USD",
+        paymentMethod: "paynow",
+        resetCredits: true, // Reset to 3 credits
+      });
+
+      console.log(
+        `[EXPIRE] Successfully expired subscription ${subscriptionId} and reset user ${userId} to free tier`
+      );
+    } catch (error) {
+      console.error(`[EXPIRE] Failed to expire subscription:`, error);
+      throw new Error(`Failed to expire subscription: ${error}`);
     }
   }
 
@@ -413,6 +442,102 @@ export class FirebaseSubscriptionService {
       return subscriptionDoc.exists ? subscriptionDoc.data() : null;
     } catch (error) {
       throw new Error(`Failed to get subscription: ${error}`);
+    }
+  }
+
+  /**
+   * Get user's active paid subscription (excludes free tier)
+   * Returns the most recent active/past_due/cancelled subscription
+   */
+  async getUserActiveSubscription(
+    userId: string
+  ): Promise<{ exists: boolean; subscriptionId?: string; data?: any }> {
+    try {
+      const subscriptionsSnapshot = await this.db
+        .collection("subscriptions")
+        .where("userId", "==", userId)
+        .where("status", "in", ["active", "past_due", "cancelled"])
+        .orderBy("createdAt", "desc")
+        .limit(1)
+        .get();
+
+      if (subscriptionsSnapshot.empty) {
+        return { exists: false };
+      }
+
+      const doc = subscriptionsSnapshot.docs[0];
+      const data = doc.data();
+
+      // Don't return free tier subscriptions
+      if (data.tier === "free") {
+        return { exists: false };
+      }
+
+      return {
+        exists: true,
+        subscriptionId: doc.id,
+        data,
+      };
+    } catch (error) {
+      console.error("Error getting user active subscription:", error);
+      throw new Error(`Failed to get user active subscription: ${error}`);
+    }
+  }
+
+  /**
+   * Check if subscription exists by payment reference (for idempotency)
+   */
+  async getSubscriptionByPaymentReference(
+    paymentReference: string
+  ): Promise<{ exists: boolean; subscriptionId?: string; data?: any }> {
+    try {
+      const subscriptionsSnapshot = await this.db
+        .collection("subscriptions")
+        .where("transactionReference", "==", paymentReference)
+        .limit(1)
+        .get();
+
+      if (subscriptionsSnapshot.empty) {
+        return { exists: false };
+      }
+
+      const doc = subscriptionsSnapshot.docs[0];
+      return {
+        exists: true,
+        subscriptionId: doc.id,
+        data: doc.data(),
+      };
+    } catch (error) {
+      console.error("Error checking subscription by payment reference:", error);
+      throw new Error(
+        `Failed to check subscription by payment reference: ${error}`
+      );
+    }
+  }
+
+  /**
+   * Check if transaction exists by reference (for idempotency)
+   */
+  async getTransactionByReference(
+    transactionReference: string
+  ): Promise<{ exists: boolean; data?: any }> {
+    try {
+      const transactionDoc = await this.db
+        .collection("transactions")
+        .doc(transactionReference)
+        .get();
+
+      if (!transactionDoc.exists) {
+        return { exists: false };
+      }
+
+      return {
+        exists: true,
+        data: transactionDoc.data(),
+      };
+    } catch (error) {
+      console.error("Error checking transaction by reference:", error);
+      throw new Error(`Failed to check transaction by reference: ${error}`);
     }
   }
 
