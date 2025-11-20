@@ -1,6 +1,8 @@
 /**
  * Paynow Payment Webhook Handler
  * Receives payment notifications from Paynow payment gateway
+ * Handles all test scenarios: SUCCESS, PENDING, FAILED, CANCELLED, INSUFFICIENT BALANCE
+ * Documentation: https://developers.paynow.co.zw/docs/test_mode.html
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -25,6 +27,10 @@ export async function POST(req: NextRequest) {
       hash: formData.get("hash") as string,
     };
 
+    console.log(
+      `[PAYNOW_WEBHOOK] Received webhook - Reference: ${payload.reference}, Status: ${payload.status}, Amount: ${payload.amount}`
+    );
+
     // Initialize services
     const paynowService = new PaynowService(
       process.env.PAYNOW_INTEGRATION_ID || "",
@@ -38,117 +44,310 @@ export async function POST(req: NextRequest) {
 
     // Validate webhook payload
     if (!paynowService.validateWebhook(payload)) {
+      console.error(
+        `[PAYNOW_WEBHOOK] Invalid webhook payload - Reference: ${payload.reference}`
+      );
       return NextResponse.json(
         { error: "Invalid webhook payload" },
         { status: 400 }
       );
     }
 
-    // Parse payment status
-    const parsedStatus = paynowService.parsePaymentStatus(payload.status);
-
-    // Only process successful payments
-    if (parsedStatus !== "SUCCESS") {
-      console.log(
-        `Payment ${payload.reference} not successful. Status: ${payload.status}`
-      );
-      return NextResponse.json({
-        message: "Payment not successful",
-        status: payload.status,
-      });
-    }
-
     // Extract user ID and currency from reference
-    // Reference format should be: userId_currency_timestamp
+    // Reference format: userId_currency_timestamp
     const referenceParts = payload.reference.split("_");
     const userId = referenceParts[0];
     const currency = (referenceParts[1] || "USD").toUpperCase() as Currency;
 
     if (!userId) {
+      console.error(
+        `[PAYNOW_WEBHOOK] User ID not found in reference: ${payload.reference}`
+      );
       return NextResponse.json(
         { error: "User ID not found in payment reference" },
         { status: 400 }
       );
     }
 
-    // Parse amount
+    // Parse payment status
+    const parsedStatus = paynowService.parsePaymentStatus(payload.status);
     const amount = parseFloat(payload.amount);
 
-    // Determine subscription tier based on amount and currency
-    const tier = firebaseService.getSubscriptionTier(amount, currency);
-
-    // Create subscription dates (1 month from now)
-    const startDate = new Date();
-    const renewalDate = new Date();
-    renewalDate.setMonth(renewalDate.getMonth() + 1);
-
-    // Generate subscription ID
-    const subscriptionId = `sub_paynow_${payload.paynowreference}_${Date.now()}`;
-
-    // Create subscription record
-    await firebaseService.createSubscriptionRecord({
-      userId,
-      subscriptionId,
-      tier,
-      status: "active",
-      amount,
-      currency,
-      paymentMethod: "paynow",
-      transactionReference: payload.paynowreference,
-      startDate,
-      renewalDate,
-      metadata: {
-        reference: payload.reference,
-        paynowReference: payload.paynowreference,
-        pollUrl: payload.pollurl,
-      },
-    });
-
-    // Update user subscription
-    await firebaseService.updateUserSubscription({
-      userId,
-      subscriptionId,
-      tier,
-      status: "active",
-      startDate,
-      endDate: renewalDate,
-      amount,
-      currency,
-      paymentMethod: "paynow",
-      metadata: {
-        paynowReference: payload.paynowreference,
-        reference: payload.reference,
-      },
-    });
-
-    // Log transaction
-    await firebaseService.logTransaction({
-      userId,
-      transactionId: payload.reference,
-      type: "subscription_payment",
-      status: "SUCCESS",
-      amount,
-      currency,
-      paymentMethod: "paynow",
-      subscriptionId,
-      metadata: {
-        paynowReference: payload.paynowreference,
-        pollUrl: payload.pollurl,
-      },
-    });
-
     console.log(
-      `Successfully processed Paynow payment for user: ${userId}, tier: ${tier}`
+      `[PAYNOW_WEBHOOK] Parsed status: ${parsedStatus}, User: ${userId}, Amount: ${amount} ${currency}`
     );
 
-    return NextResponse.json({
-      success: true,
-      subscriptionId,
-      tier,
-      message: "Payment processed successfully",
-    });
+    // Check for existing transaction (idempotency for delayed success scenario)
+    const existingTransaction = await firebaseService.getTransactionByReference(
+      payload.reference
+    );
+
+    if (existingTransaction.exists) {
+      const existingStatus = existingTransaction.data?.status;
+      console.log(
+        `[PAYNOW_WEBHOOK] Transaction already exists - Reference: ${payload.reference}, Existing Status: ${existingStatus}, New Status: ${parsedStatus}`
+      );
+
+      // If transaction already succeeded, don't process again
+      if (existingStatus === "SUCCESS") {
+        return NextResponse.json({
+          success: true,
+          message: "Transaction already processed successfully",
+          status: parsedStatus,
+        });
+      }
+
+      // If previous status was PENDING and now it's SUCCESS, update it
+      if (existingStatus === "PENDING" && parsedStatus === "SUCCESS") {
+        console.log(
+          `[PAYNOW_WEBHOOK] Updating PENDING transaction to SUCCESS - Reference: ${payload.reference}`
+        );
+        // Continue processing to create subscription
+      } else if (existingStatus === "PENDING" && parsedStatus === "FAILED") {
+        // Update pending transaction to failed
+        await firebaseService.logTransaction({
+          userId,
+          transactionId: payload.reference,
+          type: "subscription_payment",
+          status: "FAILED",
+          amount,
+          currency,
+          paymentMethod: "paynow",
+          metadata: {
+            paynowReference: payload.paynowreference,
+            pollUrl: payload.pollurl,
+            rawStatus: payload.status,
+            failureReason: paynowService.getFailureReason(payload.status),
+          },
+        });
+
+        console.log(
+          `[PAYNOW_WEBHOOK] Updated PENDING transaction to FAILED - Reference: ${payload.reference}`
+        );
+
+        return NextResponse.json({
+          success: false,
+          message: "Payment failed",
+          status: parsedStatus,
+          reason: paynowService.getFailureReason(payload.status),
+        });
+      }
+    }
+
+    // Handle based on parsed status
+    switch (parsedStatus) {
+      case "SUCCESS": {
+        // Check if subscription already exists by payment reference (additional idempotency check)
+        const existingSubscription =
+          await firebaseService.getSubscriptionByPaymentReference(
+            payload.paynowreference
+          );
+
+        if (existingSubscription.exists) {
+          console.log(
+            `[PAYNOW_WEBHOOK] Subscription already exists for payment reference: ${payload.paynowreference}`
+          );
+          return NextResponse.json({
+            success: true,
+            subscriptionId: existingSubscription.subscriptionId,
+            message: "Subscription already exists",
+          });
+        }
+
+        // Determine subscription tier based on amount and currency
+        const tier = firebaseService.getSubscriptionTier(amount, currency);
+
+        // Check if user has an existing active subscription (for upgrades/renewals)
+        const userActiveSubscription =
+          await firebaseService.getUserActiveSubscription(userId);
+
+        let transactionType: "subscription_payment" | "subscription_renewal" =
+          "subscription_payment";
+
+        if (userActiveSubscription.exists) {
+          const oldTier = userActiveSubscription.data.tier;
+          const oldSubscriptionId = userActiveSubscription.subscriptionId;
+
+          if (oldTier === tier) {
+            transactionType = "subscription_renewal";
+            console.log(
+              `[PAYNOW_WEBHOOK] Renewal detected - User: ${userId}, Tier: ${tier}, Old Subscription: ${oldSubscriptionId}`
+            );
+          } else {
+            console.log(
+              `[PAYNOW_WEBHOOK] Upgrade/Downgrade detected - User: ${userId}, Old Tier: ${oldTier}, New Tier: ${tier}, Old Subscription: ${oldSubscriptionId}`
+            );
+          }
+
+          // Mark old subscription as expired
+          await firebaseService.updateSubscriptionStatus(
+            oldSubscriptionId!,
+            "expired"
+          );
+          console.log(
+            `[PAYNOW_WEBHOOK] Marked old subscription ${oldSubscriptionId} as expired`
+          );
+        } else {
+          console.log(
+            `[PAYNOW_WEBHOOK] First paid subscription for user: ${userId}`
+          );
+        }
+
+        // Create subscription dates (1 month from now)
+        const startDate = new Date();
+        const renewalDate = new Date();
+        renewalDate.setMonth(renewalDate.getMonth() + 1);
+
+        // Generate subscription ID
+        const subscriptionId = `sub_paynow_${payload.paynowreference}_${Date.now()}`;
+
+        console.log(
+          `[PAYNOW_WEBHOOK] Creating subscription - ID: ${subscriptionId}, Tier: ${tier}, User: ${userId}`
+        );
+
+        // Create subscription record
+        await firebaseService.createSubscriptionRecord({
+          userId,
+          subscriptionId,
+          tier,
+          status: "active",
+          amount,
+          currency,
+          paymentMethod: "paynow",
+          transactionReference: payload.paynowreference,
+          startDate,
+          renewalDate,
+          metadata: {
+            reference: payload.reference,
+            paynowReference: payload.paynowreference,
+            pollUrl: payload.pollurl,
+            rawStatus: payload.status,
+            previousSubscriptionId: userActiveSubscription.subscriptionId,
+            isRenewal: transactionType === "subscription_renewal",
+          },
+        });
+
+        // Update user subscription (always reset credits for new billing cycle)
+        await firebaseService.updateUserSubscription({
+          userId,
+          subscriptionId,
+          tier,
+          status: "active",
+          startDate,
+          endDate: renewalDate,
+          amount,
+          currency,
+          paymentMethod: "paynow",
+          resetCredits: true, // Always reset credits for new subscription/renewal
+          metadata: {
+            paynowReference: payload.paynowreference,
+            reference: payload.reference,
+          },
+        });
+
+        // Log successful transaction
+        await firebaseService.logTransaction({
+          userId,
+          transactionId: payload.reference,
+          type: transactionType,
+          status: "SUCCESS",
+          amount,
+          currency,
+          paymentMethod: "paynow",
+          subscriptionId,
+          metadata: {
+            paynowReference: payload.paynowreference,
+            pollUrl: payload.pollurl,
+            rawStatus: payload.status,
+            tier,
+            previousSubscriptionId: userActiveSubscription.subscriptionId,
+          },
+        });
+
+        console.log(
+          `[PAYNOW_WEBHOOK] Successfully processed ${transactionType} - User: ${userId}, Tier: ${tier}, Subscription: ${subscriptionId}`
+        );
+
+        return NextResponse.json({
+          success: true,
+          subscriptionId,
+          tier,
+          message: "Payment processed successfully",
+          transactionType,
+        });
+      }
+
+      case "PENDING": {
+        // Log pending transaction for tracking
+        await firebaseService.logTransaction({
+          userId,
+          transactionId: payload.reference,
+          type: "subscription_payment",
+          status: "PENDING",
+          amount,
+          currency,
+          paymentMethod: "paynow",
+          metadata: {
+            paynowReference: payload.paynowreference,
+            pollUrl: payload.pollurl,
+            rawStatus: payload.status,
+          },
+        });
+
+        console.log(
+          `[PAYNOW_WEBHOOK] Payment pending - Reference: ${payload.reference}, User: ${userId}`
+        );
+
+        return NextResponse.json({
+          success: true,
+          message: "Payment is pending",
+          status: "PENDING",
+          pollUrl: payload.pollurl,
+        });
+      }
+
+      case "FAILED": {
+        // Log failed transaction with failure reason
+        await firebaseService.logTransaction({
+          userId,
+          transactionId: payload.reference,
+          type: "subscription_payment",
+          status: "FAILED",
+          amount,
+          currency,
+          paymentMethod: "paynow",
+          metadata: {
+            paynowReference: payload.paynowreference,
+            pollUrl: payload.pollurl,
+            rawStatus: payload.status,
+            failureReason: paynowService.getFailureReason(payload.status),
+          },
+        });
+
+        console.log(
+          `[PAYNOW_WEBHOOK] Payment failed - Reference: ${payload.reference}, User: ${userId}, Reason: ${paynowService.getFailureReason(payload.status)}`
+        );
+
+        return NextResponse.json({
+          success: false,
+          message: "Payment failed",
+          status: "FAILED",
+          reason: paynowService.getFailureReason(payload.status),
+        });
+      }
+
+      default:
+        console.warn(
+          `[PAYNOW_WEBHOOK] Unknown payment status: ${payload.status}`
+        );
+        return NextResponse.json({
+          success: false,
+          message: "Unknown payment status",
+          status: payload.status,
+        });
+    }
   } catch (error) {
-    console.error("Error processing Paynow webhook:", error);
+    console.error("[PAYNOW_WEBHOOK] Error processing webhook:", error);
     return NextResponse.json(
       {
         error: "Failed to process webhook",
