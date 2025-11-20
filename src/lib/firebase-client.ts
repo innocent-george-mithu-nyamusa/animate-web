@@ -55,29 +55,31 @@ export const firebaseAuth = {
   // Sign up with email and password
   signUp: async (email: string, password: string, displayName?: string) => {
     try {
+      // Create user in Firebase Auth (client-side)
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
-      // Call backend to create user document
+      // Get ID token for the newly created user
       const idToken = await userCredential.user.getIdToken();
 
+      // Call backend to create Firestore user document
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email,
-          password,
+          idToken,
           displayName,
         }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create user account");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create user document");
       }
 
       return {
