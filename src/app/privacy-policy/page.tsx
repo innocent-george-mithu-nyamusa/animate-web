@@ -25,8 +25,8 @@ const PrivacyPolicyPage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>Privacy Policy - Animate | AI Image Stylizer</title>
-        <meta name="description" content="Privacy Policy for Animate - AI Image Stylizer by Pixelspulse Private Limited" />
+        <title>Privacy Policy - Animate | Image Stylizer</title>
+        <meta name="description" content="Privacy Policy for Animate - Image Stylizer by Pixelspulse Private Limited" />
         <meta name="robots" content="index, follow" />
       </Head>
 
@@ -42,7 +42,7 @@ const PrivacyPolicyPage: React.FC = () => {
             />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Privacy Policy</h1>
-                <p className="text-gray-600">Animate - AI Image Stylizer</p>
+                <p className="text-gray-600">Animate - Image Stylizer</p>
               </div>
             </div>
           </div>

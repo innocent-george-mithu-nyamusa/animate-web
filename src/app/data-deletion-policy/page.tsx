@@ -27,7 +27,7 @@ const DataDeletionPage = () => {
             />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Animate</h1>
-              <p className="text-sm text-gray-600">AI Image Style Editor</p>
+              <p className="text-sm text-gray-600">Image Style Editor</p>
             </div>
           </div>
         </div>

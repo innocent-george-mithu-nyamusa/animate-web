@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Animate",
-  description: "AI image stylizer",
+  description: "image stylizer",
 };
 
 export default function RootLayout({
