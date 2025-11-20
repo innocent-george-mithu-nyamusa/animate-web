@@ -212,26 +212,62 @@ export class PaynowService {
 
   /**
    * Parse webhook status to subscription state
+   * Based on Paynow documentation: https://developers.paynow.co.zw/docs/test_mode.html
    */
   parsePaymentStatus(status: string): "SUCCESS" | "FAILED" | "PENDING" {
     const upperStatus = status.toUpperCase();
 
+    // Success statuses
     if (
       upperStatus === "PAID" ||
       upperStatus === "DELIVERED" ||
-      upperStatus === "SUCCESS"
+      upperStatus === "SUCCESS" ||
+      upperStatus === "SUCCESSFUL"
     ) {
       return "SUCCESS";
     }
 
+    // Failed statuses
     if (
       upperStatus === "CANCELLED" ||
       upperStatus === "FAILED" ||
-      upperStatus === "DISPUTED"
+      upperStatus === "DISPUTED" ||
+      upperStatus === "REFUNDED" ||
+      upperStatus.includes("INSUFFICIENT")
     ) {
       return "FAILED";
     }
 
+    // Pending statuses (awaiting, sent, created, etc.)
     return "PENDING";
+  }
+
+  /**
+   * Get user-friendly error message based on payment status
+   */
+  getFailureReason(status: string): string {
+    const upperStatus = status.toUpperCase();
+
+    if (upperStatus === "CANCELLED") {
+      return "Payment was cancelled by user";
+    }
+
+    if (upperStatus.includes("INSUFFICIENT")) {
+      return "Insufficient balance in account";
+    }
+
+    if (upperStatus === "DISPUTED") {
+      return "Payment is under dispute";
+    }
+
+    if (upperStatus === "REFUNDED") {
+      return "Payment was refunded";
+    }
+
+    if (upperStatus === "FAILED") {
+      return "Payment failed";
+    }
+
+    return "Payment could not be completed";
   }
 }
