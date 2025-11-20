@@ -92,6 +92,7 @@ export class FirebaseSubscriptionService {
 
   /**
    * Create or update user subscription
+   * @param resetCredits - If true, resets credits to full amount (for new subscriptions/renewals)
    */
   async updateUserSubscription({
     userId,
@@ -104,6 +105,7 @@ export class FirebaseSubscriptionService {
     currency,
     paymentMethod,
     metadata = {},
+    resetCredits = true,
   }: {
     userId: string;
     subscriptionId: string;
@@ -115,6 +117,7 @@ export class FirebaseSubscriptionService {
     currency: Currency;
     paymentMethod: PaymentMethod;
     metadata?: Record<string, any>;
+    resetCredits?: boolean;
   }) {
     try {
       const userDoc = this.db.collection("users").doc(userId);
@@ -137,10 +140,11 @@ export class FirebaseSubscriptionService {
       await userDoc.set(subscriptionData, { merge: true });
 
       // Update generation credits based on tier
-      await this.setGenerationCredits(userId, tier);
+      // Only reset credits if explicitly requested (e.g., new subscription or renewal)
+      await this.setGenerationCredits(userId, tier, resetCredits);
 
       console.log(
-        `Successfully updated subscription for user: ${userId}, tier: ${tier}`
+        `Successfully updated subscription for user: ${userId}, tier: ${tier}, credits reset: ${resetCredits}`
       );
     } catch (error) {
       throw new Error(`Failed to update user subscription: ${error}`);
@@ -149,18 +153,46 @@ export class FirebaseSubscriptionService {
 
   /**
    * Set generation credits based on subscription tier
+   * @param resetCredits - If true, resets remaining credits to full amount (for renewals/new subscriptions)
+   *                       If false, only updates tier and total (preserves remaining credits)
    */
-  async setGenerationCredits(userId: string, tier: SubscriptionTier) {
+  async setGenerationCredits(
+    userId: string,
+    tier: SubscriptionTier,
+    resetCredits: boolean = true
+  ) {
     try {
       const generations = this.getGenerationsForTier(tier);
+      const userRef = this.db.collection("users").doc(userId);
 
-      await this.db
-        .collection("users")
-        .doc(userId)
-        .set(
+      if (resetCredits) {
+        // Reset credits to full amount (for new subscriptions or renewals)
+        await userRef.set(
           {
             credits: {
               remaining: generations,
+              total: generations,
+              tier,
+              updatedAt: new Date().toISOString(),
+              lastReset: new Date().toISOString(),
+            },
+          },
+          { merge: true }
+        );
+
+        console.log(
+          `Reset ${generations} generation credits for user: ${userId}`
+        );
+      } else {
+        // Just update tier and total, preserve remaining credits
+        const userDoc = await userRef.get();
+        const userData = userDoc.data();
+        const currentRemaining = userData?.credits?.remaining || 0;
+
+        await userRef.set(
+          {
+            credits: {
+              remaining: currentRemaining, // Preserve current credits
               total: generations,
               tier,
               updatedAt: new Date().toISOString(),
@@ -169,9 +201,10 @@ export class FirebaseSubscriptionService {
           { merge: true }
         );
 
-      console.log(
-        `Set ${generations} generation credits for user: ${userId}`
-      );
+        console.log(
+          `Updated tier to ${tier} for user: ${userId}, preserved ${currentRemaining} remaining credits`
+        );
+      }
     } catch (error) {
       throw new Error(`Failed to update generation credits: ${error}`);
     }
@@ -390,25 +423,48 @@ export class FirebaseSubscriptionService {
   async processExpiredSubscriptions() {
     try {
       const now = new Date();
+      console.log(`[CRON] Processing subscriptions at ${now.toISOString()}`);
+
       const subscriptionsSnapshot = await this.db
         .collection("subscriptions")
         .where("status", "in", ["active", "past_due", "cancelled"])
         .get();
 
+      console.log(
+        `[CRON] Found ${subscriptionsSnapshot.docs.length} active/past_due/cancelled subscriptions`
+      );
+
       const expiredSubscriptions = subscriptionsSnapshot.docs.filter((doc) => {
         const data = doc.data();
         const renewalDate = new Date(data.renewalDate);
-        return renewalDate < now;
+        const isExpired = renewalDate < now;
+
+        if (isExpired) {
+          console.log(
+            `[CRON] Subscription ${doc.id} expired - renewalDate: ${renewalDate.toISOString()}, now: ${now.toISOString()}, user: ${data.userId}`
+          );
+        }
+
+        return isExpired;
       });
 
+      console.log(
+        `[CRON] Found ${expiredSubscriptions.length} expired subscriptions to process`
+      );
+
       for (const doc of expiredSubscriptions) {
+        const data = doc.data();
+        console.log(
+          `[CRON] Expiring subscription ${doc.id} for user ${data.userId}`
+        );
         await this.expireSubscription(doc.id);
       }
 
       console.log(
-        `Processed ${expiredSubscriptions.length} expired subscriptions`
+        `[CRON] Successfully processed ${expiredSubscriptions.length} expired subscriptions`
       );
     } catch (error) {
+      console.error(`[CRON] Failed to process expired subscriptions:`, error);
       throw new Error(`Failed to process expired subscriptions: ${error}`);
     }
   }

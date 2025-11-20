@@ -11,7 +11,75 @@ export class FirebaseAuthService {
   private db = adminDb;
 
   /**
+   * Create user document in Firestore for an already-authenticated user
+   * This is called after the user is created via client-side Firebase Auth
+   */
+  async createUserDocument({
+    uid,
+    email,
+    displayName,
+  }: {
+    uid: string;
+    email: string;
+    displayName?: string;
+  }) {
+    try {
+      // Check if user document already exists
+      const userRef = this.db.collection("users").doc(uid);
+      const userDoc = await userRef.get();
+
+      if (userDoc.exists) {
+        console.log(`User document already exists for: ${uid}`);
+        return {
+          success: true,
+          uid,
+          email,
+          alreadyExists: true,
+        };
+      }
+
+      // Create user document in Firestore with free tier
+      await userRef.set({
+        uid,
+        email,
+        displayName,
+        photoURL: null,
+        provider: "email",
+        subscription: {
+          tier: "free",
+          status: "active",
+          startDate: new Date().toISOString(),
+          endDate: null,
+        },
+        credits: {
+          remaining: 3,
+          total: 3,
+          tier: "free",
+          updatedAt: new Date().toISOString(),
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      console.log(`Successfully created user document: ${uid}`);
+
+      return {
+        success: true,
+        uid,
+        email,
+        alreadyExists: false,
+      };
+    } catch (error: any) {
+      console.error("Error creating user document:", error);
+      throw new Error(
+        error.message || "Failed to create user document"
+      );
+    }
+  }
+
+  /**
    * Create a new user with email and password
+   * @deprecated Use client-side createUserWithEmailAndPassword + createUserDocument instead
    */
   async createUserWithEmail({
     email,
@@ -23,6 +91,7 @@ export class FirebaseAuthService {
     displayName?: string;
   }) {
     try {
+
       // Create user in Firebase Auth
       const userRecord = await this.auth.createUser({
         email,
