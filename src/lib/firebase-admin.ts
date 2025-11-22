@@ -91,6 +91,16 @@ export class FirebaseSubscriptionService {
   }
 
   /**
+   * Get expected amount for a subscription tier and currency
+   * Used for amount validation in webhooks
+   */
+  getExpectedAmount(tier: SubscriptionTier, currency: Currency): number {
+    return currency === "USD"
+      ? SUBSCRIPTION_TIERS[tier].usd
+      : SUBSCRIPTION_TIERS[tier].zwg;
+  }
+
+  /**
    * Create or update user subscription
    * @param resetCredits - If true, resets credits to full amount (for new subscriptions/renewals)
    */

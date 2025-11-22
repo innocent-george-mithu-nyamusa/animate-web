@@ -315,6 +315,16 @@ export default function AnimateSPA() {
     setIsProcessing(true);
 
     try {
+      // Get user ID token for authentication
+      const idToken = await firebaseAuth.getIdToken();
+
+      if (!idToken) {
+        alert('Please sign in to apply styles');
+        setShowAuth(true);
+        setIsProcessing(false);
+        return;
+      }
+
       const response = await fetch('/api/process-image', {
         method: 'POST',
         headers: {
@@ -322,7 +332,8 @@ export default function AnimateSPA() {
         },
         body: JSON.stringify({
           image: uploadedImage,
-          prompt: selectedStyle.prompt
+          prompt: selectedStyle.prompt,
+          idToken
         })
       });
 
@@ -334,20 +345,20 @@ export default function AnimateSPA() {
       const data = await response.json();
 
       if (data.success) {
-        // In production, this would be the actual styled image from the API
-        // For now, we show the original as a placeholder
+        // Set the styled image
         setStyledImage(data.styledImage || uploadedImage);
 
         // Log the AI description for debugging
         console.log('Style Description:', data.description);
 
-        // Deduct credit after successful processing
-        // In a real implementation, this would be done server-side
-        if (userSubscription) {
+        // Update local state with credits from server response
+        // Credits are deducted server-side by the process-image API
+        if (userSubscription && typeof data.creditsRemaining === 'number') {
           setUserSubscription({
             ...userSubscription,
-            credits: userSubscription.credits - 1
+            credits: data.creditsRemaining
           });
+          console.log('Credits updated. Remaining:', data.creditsRemaining);
         }
       } else {
         throw new Error(data.error || 'Processing failed');

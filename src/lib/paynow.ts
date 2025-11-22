@@ -46,6 +46,8 @@ export type PaynowMobileMethod = "ecocash" | "onemoney";
 
 export class PaynowService {
   private paynow: Paynow;
+  private integrationId: string;
+  private integrationKey: string;
   private resultUrl: string;
   private returnUrl: string;
 
@@ -56,6 +58,8 @@ export class PaynowService {
     returnUrl: string
   ) {
     this.paynow = new Paynow(integrationId, integrationKey, returnUrl, resultUrl);
+    this.integrationId = integrationId;
+    this.integrationKey = integrationKey;
     this.resultUrl = resultUrl;
     this.returnUrl = returnUrl;
 
@@ -186,19 +190,45 @@ export class PaynowService {
   /**
    * Validate Paynow webhook payload
    * Verifies the hash to ensure the request is authentic
+   * CRITICAL SECURITY: Prevents fake payment notifications
+   * Hash formula: SHA512(id + reference + amount + status + integration_key)
    */
   validateWebhook(payload: PaynowWebhookPayload): boolean {
     try {
-      // Paynow sends a hash that needs to be validated
-      // The SDK handles hash validation internally
-      return !!(
-        payload.reference &&
-        payload.paynowreference &&
-        payload.status &&
-        payload.hash
-      );
+      // First check if all required fields exist
+      if (!payload.reference || !payload.paynowreference || !payload.status || !payload.hash || !payload.amount) {
+        console.error("[WEBHOOK_SECURITY] Missing required fields in webhook payload");
+        return false;
+      }
+
+      // Build the hash string according to Paynow specification
+      // Format: integrationId + reference + amount + status(lowercase) + integrationKey
+      const hashString = `${this.integrationId}${payload.reference}${payload.amount}${payload.status.toLowerCase()}${this.integrationKey}`;
+
+      // Calculate SHA512 hash
+      const crypto = require('crypto');
+      const calculatedHash = crypto
+        .createHash('sha512')
+        .update(hashString)
+        .digest('hex')
+        .toUpperCase();
+
+      // Compare with provided hash (case-insensitive)
+      const providedHash = payload.hash.toUpperCase();
+      const isValid = calculatedHash === providedHash;
+
+      if (!isValid) {
+        console.error("[WEBHOOK_SECURITY] Hash validation FAILED - Potential payment tampering detected!");
+        console.error(`[WEBHOOK_SECURITY] Reference: ${payload.reference}`);
+        console.error(`[WEBHOOK_SECURITY] Expected hash: ${calculatedHash.substring(0, 20)}...`);
+        console.error(`[WEBHOOK_SECURITY] Received hash: ${providedHash.substring(0, 20)}...`);
+      } else {
+        console.log("[WEBHOOK_SECURITY] Hash validation PASSED for reference:", payload.reference);
+      }
+
+      return isValid;
     } catch (error) {
-      console.error("Webhook validation error:", error);
+      console.error("[WEBHOOK_SECURITY] Error during webhook validation:", error);
       return false;
     }
   }

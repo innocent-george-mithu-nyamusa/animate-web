@@ -157,6 +157,48 @@ export async function POST(req: NextRequest) {
         // Determine subscription tier based on amount and currency
         const tier = firebaseService.getSubscriptionTier(amount, currency);
 
+        // SECURITY: Validate that the amount paid matches the expected price for the tier
+        // Prevents users from paying $1 and getting premium by tampering with payment data
+        const expectedAmount = firebaseService.getExpectedAmount(tier, currency);
+        const amountDifference = Math.abs(amount - expectedAmount);
+        const tolerance = 0.01; // Allow 1 cent difference for floating point issues
+
+        if (tier !== "free" && amountDifference > tolerance) {
+          console.error(
+            `[PAYNOW_WEBHOOK] SECURITY ALERT: Amount mismatch detected! Tier: ${tier}, Expected: ${expectedAmount}, Received: ${amount}, Currency: ${currency}`
+          );
+
+          // Log suspicious transaction
+          await firebaseService.logTransaction({
+            userId,
+            transactionId: payload.reference,
+            type: "subscription_payment",
+            status: "FAILED",
+            amount,
+            currency,
+            paymentMethod: "paynow",
+            metadata: {
+              paynowReference: payload.paynowreference,
+              pollUrl: payload.pollurl,
+              rawStatus: payload.status,
+              failureReason: `Amount tampering detected - Expected ${expectedAmount} ${currency}, received ${amount} ${currency}`,
+              detectedTier: tier,
+              expectedAmount,
+              receivedAmount: amount,
+            },
+          });
+
+          return NextResponse.json({
+            success: false,
+            error: "Payment amount does not match subscription tier",
+            message: "Payment validation failed",
+          }, { status: 400 });
+        }
+
+        console.log(
+          `[PAYNOW_WEBHOOK] Amount validation PASSED - Tier: ${tier}, Amount: ${amount} ${currency}`
+        );
+
         // Check if user has an existing active subscription (for upgrades/renewals)
         const userActiveSubscription =
           await firebaseService.getUserActiveSubscription(userId);

@@ -9,7 +9,7 @@ import { FirebaseAuthService } from "@/lib/firebase-auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { idToken, pollUrl } = await req.json();
+    const { idToken, pollUrl, reference } = await req.json();
 
     // Validate required fields
     if (!idToken || !pollUrl) {
@@ -21,7 +21,25 @@ export async function POST(req: NextRequest) {
 
     // Verify user token
     const authService = new FirebaseAuthService();
-    await authService.verifyIdToken(idToken);
+    const verifiedToken = await authService.verifyIdToken(idToken);
+    const userId = verifiedToken.uid;
+
+    // SECURITY: Validate that the payment reference belongs to the authenticated user
+    // Reference format: userId_currency_timestamp
+    if (reference) {
+      const referenceParts = reference.split("_");
+      const referenceUserId = referenceParts[0];
+
+      if (referenceUserId !== userId) {
+        console.error(
+          `[PAYMENT_STATUS] SECURITY: User ${userId} attempted to check status of payment belonging to ${referenceUserId}`
+        );
+        return NextResponse.json(
+          { error: "Unauthorized: You can only check your own payments" },
+          { status: 403 }
+        );
+      }
+    }
 
     // Check payment status via Paynow
     const paynowService = new PaynowService(
@@ -34,6 +52,22 @@ export async function POST(req: NextRequest) {
     );
 
     const status = await paynowService.checkPaymentStatus(pollUrl);
+
+    // Double-check the reference from the status response
+    if (status.reference) {
+      const statusReferenceParts = status.reference.split("_");
+      const statusUserId = statusReferenceParts[0];
+
+      if (statusUserId !== userId) {
+        console.error(
+          `[PAYMENT_STATUS] SECURITY: Mismatch - User ${userId} tried accessing payment ${status.reference}`
+        );
+        return NextResponse.json(
+          { error: "Unauthorized: Payment does not belong to you" },
+          { status: 403 }
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,

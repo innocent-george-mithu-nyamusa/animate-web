@@ -26,6 +26,54 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // SECURITY: Input validation to prevent injection attacks
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
+        { status: 400 }
+      );
+    }
+
+    // Validate amount is a positive number
+    if (typeof amount !== 'number' || amount <= 0 || amount > 100000) {
+      return NextResponse.json(
+        { error: "Invalid amount - must be a positive number less than 100,000" },
+        { status: 400 }
+      );
+    }
+
+    // Validate currency
+    if (currency !== "USD" && currency !== "ZWG") {
+      return NextResponse.json(
+        { error: "Invalid currency - must be USD or ZWG" },
+        { status: 400 }
+      );
+    }
+
+    // Validate payment method
+    if (!["ecocash", "onemoney", "card"].includes(paymentMethod)) {
+      return NextResponse.json(
+        { error: "Invalid payment method" },
+        { status: 400 }
+      );
+    }
+
+    // Validate phone number format if provided
+    if (phoneNumber) {
+      // Remove spaces and check if it's a valid phone number
+      const cleanPhone = phoneNumber.replace(/[\s\-\(\)]/g, "");
+      const phoneRegex = /^[\d+]{10,15}$/;
+      if (!phoneRegex.test(cleanPhone)) {
+        return NextResponse.json(
+          { error: "Invalid phone number format" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Verify user token
     const authService = new FirebaseAuthService();
     const verifiedToken = await authService.verifyIdToken(idToken);
