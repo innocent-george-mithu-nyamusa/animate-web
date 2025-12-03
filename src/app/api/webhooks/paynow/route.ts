@@ -1,16 +1,20 @@
 /**
  * Paynow Payment Webhook Handler
  * Receives payment notifications from Paynow payment gateway
- * Handles all test scenarios: SUCCESS, PENDING, FAILED, CANCELLED, INSUFFICIENT BALANCE
+ * Handles:
+ * - Subscription payments (reference format: userId_currency_timestamp)
+ * - Product orders (reference format: product_orderId_timestamp)
  * Documentation: https://developers.paynow.co.zw/docs/test_mode.html
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import {
   FirebaseSubscriptionService,
+  FirebaseOrderService,
   Currency,
 } from "@/lib/firebase-admin";
 import { PaynowService, PaynowWebhookPayload } from "@/lib/paynow";
+import { EmailService } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -41,6 +45,7 @@ export async function POST(req: NextRequest) {
         `${process.env.NEXT_PUBLIC_APP_URL}/success`
     );
     const firebaseService = new FirebaseSubscriptionService();
+    const orderService = new FirebaseOrderService();
 
     // Validate webhook payload
     if (!paynowService.validateWebhook(payload)) {
@@ -51,6 +56,16 @@ export async function POST(req: NextRequest) {
         { error: "Invalid webhook payload" },
         { status: 400 }
       );
+    }
+
+    // Determine payment type based on reference format
+    // Product orders: product_orderId_timestamp
+    // Subscriptions: userId_currency_timestamp
+    const isProductOrder = payload.reference.startsWith("product_");
+
+    if (isProductOrder) {
+      // Handle product order payment
+      return handleProductOrderPayment(payload, orderService, paynowService);
     }
 
     // Extract user ID and currency from reference
@@ -393,6 +408,155 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: "Failed to process webhook",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Handle product order payment webhook
+ */
+async function handleProductOrderPayment(
+  payload: PaynowWebhookPayload,
+  orderService: FirebaseOrderService,
+  paynowService: PaynowService
+) {
+  const emailService = new EmailService();
+  try {
+    // Extract order ID from reference (format: product_orderId_timestamp)
+    const referenceParts = payload.reference.split("_");
+    const orderId = referenceParts[1]; // orderId is the second part
+
+    if (!orderId) {
+      console.error(
+        `[PAYNOW_WEBHOOK_PRODUCT] Order ID not found in reference: ${payload.reference}`
+      );
+      return NextResponse.json(
+        { error: "Order ID not found in payment reference" },
+        { status: 400 }
+      );
+    }
+
+    console.log(
+      `[PAYNOW_WEBHOOK_PRODUCT] Processing product order payment - Order: ${orderId}, Status: ${payload.status}`
+    );
+
+    // Get order from Firestore
+    const order = await orderService.getOrder(orderId) as any;
+    if (!order) {
+      console.error(
+        `[PAYNOW_WEBHOOK_PRODUCT] Order not found: ${orderId}`
+      );
+      return NextResponse.json(
+        { error: "Order not found" },
+        { status: 404 }
+      );
+    }
+
+    // Parse payment status
+    const parsedStatus = paynowService.parsePaymentStatus(payload.status);
+
+    // Handle based on parsed status
+    switch (parsedStatus) {
+      case "SUCCESS": {
+        // Check if order is already paid (idempotency)
+        if (order.paymentStatus === "paid") {
+          console.log(
+            `[PAYNOW_WEBHOOK_PRODUCT] Order already paid: ${orderId}`
+          );
+          return NextResponse.json({
+            success: true,
+            message: "Order already paid",
+            orderId,
+          });
+        }
+
+        // Update order payment status to paid
+        await orderService.updateOrderPayment(
+          orderId,
+          order.paymentMethod || "unknown",
+          payload.paynowreference,
+          "paid"
+        );
+
+        console.log(
+          `[PAYNOW_WEBHOOK_PRODUCT] Successfully processed product order payment - Order: ${orderId}, Amount: ${payload.amount}`
+        );
+
+        // Send payment confirmation email (non-blocking)
+        if (order.userEmail && order.shippingAddress) {
+          emailService.sendPaymentConfirmation({
+            orderId,
+            customerEmail: order.userEmail,
+            customerName: order.shippingAddress.fullName,
+            productType: order.productType,
+            productDetails: order.productDetails,
+            amount: order.amount,
+            currency: order.currency,
+            shippingAddress: order.shippingAddress,
+            styleApplied: order.styleApplied,
+            styledImageUrl: order.styledImageUrl,
+          }).catch(err => console.error("Failed to send payment confirmation email:", err));
+        }
+
+        return NextResponse.json({
+          success: true,
+          orderId,
+          message: "Product order payment processed successfully",
+        });
+      }
+
+      case "PENDING": {
+        console.log(
+          `[PAYNOW_WEBHOOK_PRODUCT] Product order payment pending - Order: ${orderId}`
+        );
+        return NextResponse.json({
+          success: true,
+          message: "Payment is pending",
+          status: "PENDING",
+          orderId,
+        });
+      }
+
+      case "FAILED": {
+        // Update order payment status to failed
+        await orderService.updateOrderPayment(
+          orderId,
+          order.paymentMethod || "unknown",
+          payload.paynowreference,
+          "failed"
+        );
+
+        console.log(
+          `[PAYNOW_WEBHOOK_PRODUCT] Product order payment failed - Order: ${orderId}, Reason: ${paynowService.getFailureReason(payload.status)}`
+        );
+
+        return NextResponse.json({
+          success: false,
+          message: "Payment failed",
+          status: "FAILED",
+          reason: paynowService.getFailureReason(payload.status),
+          orderId,
+        });
+      }
+
+      default:
+        console.warn(
+          `[PAYNOW_WEBHOOK_PRODUCT] Unknown payment status: ${payload.status}`
+        );
+        return NextResponse.json({
+          success: false,
+          message: "Unknown payment status",
+          status: payload.status,
+        });
+    }
+  } catch (error) {
+    console.error("[PAYNOW_WEBHOOK_PRODUCT] Error processing product order payment:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to process product order payment",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
