@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Upload,
   X,
@@ -17,6 +18,7 @@ import {
   ChevronDown,
   Menu,
   Download,
+  ShoppingCart,
 } from "lucide-react";
 import { firebaseAuth } from "@/lib/firebase-client";
 import type { User } from "firebase/auth";
@@ -157,6 +159,7 @@ const PRICING_TIERS = [
 ];
 
 export default function AnimateSPA() {
+  const router = useRouter();
   const [view, setView] = useState<"app" | "pricing">("app");
   const [selectedStyle, setSelectedStyle] = useState(STYLES[0]);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -381,6 +384,22 @@ export default function AnimateSPA() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Navigate to checkout page to order physical product
+  const handleOrder = () => {
+    if (!styledImage || !user) {
+      alert("Please sign in to order products");
+      setShowAuth(true);
+      return;
+    }
+
+    // Store order data in session storage
+    sessionStorage.setItem("checkoutImageData", styledImage);
+    sessionStorage.setItem("checkoutStyle", selectedStyle.name);
+
+    // Navigate to checkout page
+    router.push("/checkout");
   };
 
   // Handle authentication
@@ -959,13 +978,22 @@ export default function AnimateSPA() {
 
                       <div className="flex items-center gap-3">
                         {styledImage && !isProcessing && (
-                          <button
-                            onClick={handleDownload}
-                            className="px-6 py-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 font-semibold transition-all transform hover:shadow-lg hover:scale-105 flex items-center space-x-2"
-                          >
-                            <Download className="w-5 h-5" />
-                            <span>Download</span>
-                          </button>
+                          <>
+                            <button
+                              onClick={handleDownload}
+                              className="px-6 py-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 font-semibold transition-all transform hover:shadow-lg hover:scale-105 flex items-center space-x-2"
+                            >
+                              <Download className="w-5 h-5" />
+                              <span>Download</span>
+                            </button>
+                            <button
+                              onClick={handleOrder}
+                              className="px-6 py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 font-semibold transition-all transform hover:shadow-lg hover:scale-105 flex items-center space-x-2"
+                            >
+                              <ShoppingCart className="w-5 h-5" />
+                              <span>Order Your Image Toy</span>
+                            </button>
+                          </>
                         )}
 
                         <button
