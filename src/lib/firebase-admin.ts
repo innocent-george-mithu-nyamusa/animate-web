@@ -2,6 +2,7 @@
 
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 
 // Initialize Firebase Admin SDK
 if (!getApps().length) {
@@ -11,10 +12,12 @@ if (!getApps().length) {
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     }),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   });
 }
 
 export const adminDb = getFirestore();
+export const adminStorage = getStorage();
 
 /**
  * Subscription States
@@ -636,6 +639,239 @@ export class FirebaseSubscriptionService {
       console.log(`Successfully renewed subscription: ${subscriptionId}`);
     } catch (error) {
       throw new Error(`Failed to renew subscription: ${error}`);
+    }
+  }
+}
+
+/**
+ * Firebase Order Management Service
+ * Handles product orders, image storage, and fulfillment tracking
+ */
+export class FirebaseOrderService {
+  db = adminDb;
+  storage = adminStorage;
+
+  /**
+   * Upload styled image to Firebase Storage
+   * @returns Public download URL for the image
+   */
+  async uploadStyledImage(
+    userId: string,
+    orderId: string,
+    imageDataUrl: string
+  ): Promise<string> {
+    try {
+      // Extract base64 data from data URL
+      const base64Data = imageDataUrl.replace(/^data:image\/\w+;base64,/, "");
+      const imageBuffer = Buffer.from(base64Data, "base64");
+
+      // Create file reference in storage
+      const bucket = this.storage.bucket();
+      const filePath = `styled-images/${userId}/${orderId}.png`;
+      const file = bucket.file(filePath);
+
+      // Upload image with metadata
+      await file.save(imageBuffer, {
+        metadata: {
+          contentType: "image/png",
+          metadata: {
+            userId,
+            orderId,
+            uploadedAt: new Date().toISOString(),
+          },
+        },
+        public: true, // Make publicly accessible
+      });
+
+      // Get public URL
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+
+      console.log(`Successfully uploaded image for order ${orderId}: ${publicUrl}`);
+      return publicUrl;
+    } catch (error) {
+      console.error("Failed to upload styled image:", error);
+      throw new Error(`Failed to upload styled image: ${error}`);
+    }
+  }
+
+  /**
+   * Create a new product order
+   */
+  async createOrder({
+    orderId,
+    userId,
+    userEmail,
+    productType,
+    productDetails,
+    styledImageUrl,
+    styleApplied,
+    amount,
+    currency,
+    shippingAddress,
+    metadata = {},
+  }: {
+    orderId: string;
+    userId: string;
+    userEmail: string;
+    productType: "plush_toy" | "framed_picture";
+    productDetails: any;
+    styledImageUrl: string;
+    styleApplied: string;
+    amount: number;
+    currency: "USD" | "ZWG";
+    shippingAddress?: any;
+    metadata?: Record<string, any>;
+  }) {
+    try {
+      const orderDoc = this.db.collection("orders").doc(orderId);
+
+      const orderData = {
+        orderId,
+        userId,
+        userEmail,
+        productType,
+        productDetails,
+        styledImageUrl,
+        styleApplied,
+        amount,
+        currency,
+        paymentStatus: "pending",
+        fulfillmentStatus: "pending",
+        shippingAddress,
+        metadata,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await orderDoc.set(orderData);
+
+      console.log(`Successfully created order: ${orderId}`);
+      return orderData;
+    } catch (error) {
+      console.error("Failed to create order:", error);
+      throw new Error(`Failed to create order: ${error}`);
+    }
+  }
+
+  /**
+   * Update order payment information
+   */
+  async updateOrderPayment(
+    orderId: string,
+    paymentMethod: string,
+    paymentReference: string,
+    paymentStatus: "pending" | "paid" | "failed"
+  ) {
+    try {
+      await this.db.collection("orders").doc(orderId).update({
+        paymentMethod,
+        paymentReference,
+        paymentStatus,
+        updatedAt: new Date().toISOString(),
+      });
+
+      console.log(`Updated payment for order ${orderId}: ${paymentStatus}`);
+    } catch (error) {
+      console.error("Failed to update order payment:", error);
+      throw new Error(`Failed to update order payment: ${error}`);
+    }
+  }
+
+  /**
+   * Update order fulfillment status
+   */
+  async updateFulfillmentStatus(
+    orderId: string,
+    status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
+  ) {
+    try {
+      await this.db.collection("orders").doc(orderId).update({
+        fulfillmentStatus: status,
+        updatedAt: new Date().toISOString(),
+      });
+
+      console.log(`Updated fulfillment status for order ${orderId}: ${status}`);
+    } catch (error) {
+      console.error("Failed to update fulfillment status:", error);
+      throw new Error(`Failed to update fulfillment status: ${error}`);
+    }
+  }
+
+  /**
+   * Get order by ID
+   */
+  async getOrder(orderId: string) {
+    try {
+      const orderDoc = await this.db.collection("orders").doc(orderId).get();
+      return orderDoc.exists ? { id: orderDoc.id, ...orderDoc.data() } : null;
+    } catch (error) {
+      console.error("Failed to get order:", error);
+      throw new Error(`Failed to get order: ${error}`);
+    }
+  }
+
+  /**
+   * Get all orders for a user
+   */
+  async getUserOrders(userId: string) {
+    try {
+      const ordersSnapshot = await this.db
+        .collection("orders")
+        .where("userId", "==", userId)
+        .orderBy("createdAt", "desc")
+        .get();
+
+      return ordersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("Failed to get user orders:", error);
+      throw new Error(`Failed to get user orders: ${error}`);
+    }
+  }
+
+  /**
+   * Get all orders (admin)
+   */
+  async getAllOrders(limit: number = 50) {
+    try {
+      const ordersSnapshot = await this.db
+        .collection("orders")
+        .orderBy("createdAt", "desc")
+        .limit(limit)
+        .get();
+
+      return ordersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("Failed to get all orders:", error);
+      throw new Error(`Failed to get all orders: ${error}`);
+    }
+  }
+
+  /**
+   * Get order by payment reference (for webhook processing)
+   */
+  async getOrderByPaymentReference(
+    paymentReference: string
+  ): Promise<{ exists: boolean; orderId?: string; data?: any }> {
+    try {
+      const ordersSnapshot = await this.db
+        .collection("orders")
+        .where("paymentReference", "==", paymentReference)
+        .limit(1)
+        .get();
+
+      if (ordersSnapshot.empty) {
+        return { exists: false };
+      }
+
+      const doc = ordersSnapshot.docs[0];
+      return {
+        exists: true,
+        orderId: doc.id,
+        data: doc.data(),
+      };
+    } catch (error) {
+      console.error("Error getting order by payment reference:", error);
+      throw new Error(`Failed to get order by payment reference: ${error}`);
     }
   }
 }
