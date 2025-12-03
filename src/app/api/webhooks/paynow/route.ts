@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   FirebaseSubscriptionService,
+  FirebaseOrderService,
   Currency,
 } from "@/lib/firebase-admin";
 import { PaynowService, PaynowWebhookPayload } from "@/lib/paynow";
@@ -53,7 +54,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract user ID and currency from reference
+    // Check if this is a product order payment (reference starts with "product_")
+    if (payload.reference.startsWith("product_")) {
+      console.log(
+        `[PAYNOW_WEBHOOK] Product order payment detected - Reference: ${payload.reference}`
+      );
+      return handleProductOrderPayment(payload, paynowService);
+    }
+
+    // Extract user ID and currency from reference for subscription payments
     // Reference format: userId_currency_timestamp
     const referenceParts = payload.reference.split("_");
     const userId = referenceParts[0];
@@ -403,4 +412,136 @@ export async function POST(req: NextRequest) {
 // Method not allowed for other HTTP methods
 export async function GET() {
   return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+}
+
+/**
+ * Handle product order payment webhook
+ * Reference format: product_orderId_timestamp
+ */
+async function handleProductOrderPayment(
+  payload: PaynowWebhookPayload,
+  paynowService: PaynowService
+): Promise<NextResponse> {
+  try {
+    const orderService = new FirebaseOrderService();
+
+    // Extract order ID from reference: product_orderId_timestamp
+    const referenceParts = payload.reference.split("_");
+    if (referenceParts.length < 2) {
+      console.error(
+        `[PAYNOW_WEBHOOK] Invalid product order reference format: ${payload.reference}`
+      );
+      return NextResponse.json(
+        { error: "Invalid product order reference format" },
+        { status: 400 }
+      );
+    }
+
+    const orderId = referenceParts[1];
+    console.log(
+      `[PAYNOW_WEBHOOK] Processing product order - Order ID: ${orderId}, Status: ${payload.status}`
+    );
+
+    // Get order from database
+    const orderData = await orderService.getOrderByPaymentReference(payload.reference);
+
+    if (!orderData) {
+      console.error(
+        `[PAYNOW_WEBHOOK] Order not found for reference: ${payload.reference}`
+      );
+      return NextResponse.json(
+        { error: "Order not found" },
+        { status: 404 }
+      );
+    }
+
+    // Type assertion for order data
+    const order = orderData as any;
+
+    // Parse payment status
+    const parsedStatus = paynowService.parsePaymentStatus(payload.status);
+
+    console.log(
+      `[PAYNOW_WEBHOOK] Product order payment - Order ID: ${orderId}, Parsed Status: ${parsedStatus}`
+    );
+
+    // Handle based on payment status
+    switch (parsedStatus) {
+      case "SUCCESS": {
+        // Update order payment status to paid
+        await orderService.updateOrderPayment(
+          orderId,
+          order.paymentMethod || "paynow",
+          payload.reference,
+          "paid"
+        );
+
+        console.log(
+          `[PAYNOW_WEBHOOK] Product order payment successful - Order ID: ${orderId}, Amount: ${payload.amount}`
+        );
+
+        return NextResponse.json({
+          success: true,
+          orderId,
+          message: "Product order payment processed successfully",
+        });
+      }
+
+      case "PENDING": {
+        console.log(
+          `[PAYNOW_WEBHOOK] Product order payment pending - Order ID: ${orderId}`
+        );
+
+        return NextResponse.json({
+          success: true,
+          message: "Product order payment is pending",
+          status: "PENDING",
+          pollUrl: payload.pollurl,
+        });
+      }
+
+      case "FAILED": {
+        // Update order payment status to failed
+        await orderService.updateOrderPayment(
+          orderId,
+          order.paymentMethod || "paynow",
+          payload.reference,
+          "failed"
+        );
+
+        console.log(
+          `[PAYNOW_WEBHOOK] Product order payment failed - Order ID: ${orderId}, Reason: ${paynowService.getFailureReason(payload.status)}`
+        );
+
+        return NextResponse.json({
+          success: false,
+          message: "Product order payment failed",
+          status: "FAILED",
+          reason: paynowService.getFailureReason(payload.status),
+        });
+      }
+
+      default:
+        console.warn(
+          `[PAYNOW_WEBHOOK] Unknown product order payment status: ${payload.status}`
+        );
+        return NextResponse.json({
+          success: false,
+          message: "Unknown payment status",
+          status: payload.status,
+        });
+    }
+  } catch (error) {
+    console.error(
+      "[PAYNOW_WEBHOOK] Error processing product order payment:",
+      error
+    );
+    return NextResponse.json(
+      {
+        error: "Failed to process product order payment",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
 }
