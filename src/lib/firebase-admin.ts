@@ -12,7 +12,7 @@ if (!getApps().length) {
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     }),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "animate-e8bc7.firebasestorage.app",
   });
 }
 
@@ -644,8 +644,7 @@ export class FirebaseSubscriptionService {
 }
 
 /**
- * Firebase Order Management Service
- * Handles product orders, image storage, and fulfillment tracking
+ * Firebase Order Service for product orders
  */
 export class FirebaseOrderService {
   db = adminDb;
@@ -653,7 +652,10 @@ export class FirebaseOrderService {
 
   /**
    * Upload styled image to Firebase Storage
-   * @returns Public download URL for the image
+   * @param userId - User ID
+   * @param orderId - Order ID
+   * @param imageDataUrl - Base64 data URL of the image
+   * @returns Public URL of uploaded image
    */
   async uploadStyledImage(
     userId: string,
@@ -662,31 +664,33 @@ export class FirebaseOrderService {
   ): Promise<string> {
     try {
       // Extract base64 data from data URL
-      const base64Data = imageDataUrl.replace(/^data:image\/\w+;base64,/, "");
-      const imageBuffer = Buffer.from(base64Data, "base64");
+      const matches = imageDataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) {
+        throw new Error("Invalid image data URL");
+      }
 
-      // Create file reference in storage
+      const contentType = matches[1];
+      const base64Data = matches[2];
+      const buffer = Buffer.from(base64Data, "base64");
+
+      // Create file path
+      const fileName = `orders/${userId}/${orderId}.png`;
       const bucket = this.storage.bucket();
-      const filePath = `styled-images/${userId}/${orderId}.png`;
-      const file = bucket.file(filePath);
+      const file = bucket.file(fileName);
 
-      // Upload image with metadata
-      await file.save(imageBuffer, {
+      // Upload file
+      await file.save(buffer, {
         metadata: {
-          contentType: "image/png",
-          metadata: {
-            userId,
-            orderId,
-            uploadedAt: new Date().toISOString(),
-          },
+          contentType,
         },
-        public: true, // Make publicly accessible
+        public: true,
       });
 
-      // Get public URL
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+      // Make file publicly accessible
+      await file.makePublic();
 
-      console.log(`Successfully uploaded image for order ${orderId}: ${publicUrl}`);
+      // Get public URL
+      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
       return publicUrl;
     } catch (error) {
       console.error("Failed to upload styled image:", error);
@@ -708,7 +712,6 @@ export class FirebaseOrderService {
     amount,
     currency,
     shippingAddress,
-    metadata = {},
   }: {
     orderId: string;
     userId: string;
@@ -719,8 +722,7 @@ export class FirebaseOrderService {
     styleApplied: string;
     amount: number;
     currency: "USD" | "ZWG";
-    shippingAddress?: any;
-    metadata?: Record<string, any>;
+    shippingAddress: any;
   }) {
     try {
       const orderDoc = this.db.collection("orders").doc(orderId);
@@ -738,14 +740,13 @@ export class FirebaseOrderService {
         paymentStatus: "pending",
         fulfillmentStatus: "pending",
         shippingAddress,
-        metadata,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
       await orderDoc.set(orderData);
 
-      console.log(`Successfully created order: ${orderId}`);
+      console.log("Successfully created order:", orderId);
       return orderData;
     } catch (error) {
       console.error("Failed to create order:", error);
@@ -763,14 +764,18 @@ export class FirebaseOrderService {
     paymentStatus: "pending" | "paid" | "failed"
   ) {
     try {
-      await this.db.collection("orders").doc(orderId).update({
+      const orderDoc = this.db.collection("orders").doc(orderId);
+
+      await orderDoc.update({
         paymentMethod,
         paymentReference,
         paymentStatus,
         updatedAt: new Date().toISOString(),
       });
 
-      console.log(`Updated payment for order ${orderId}: ${paymentStatus}`);
+      console.log(
+        `Updated payment for order ${orderId}: ${paymentStatus}`
+      );
     } catch (error) {
       console.error("Failed to update order payment:", error);
       throw new Error(`Failed to update order payment: ${error}`);
@@ -785,7 +790,9 @@ export class FirebaseOrderService {
     status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
   ) {
     try {
-      await this.db.collection("orders").doc(orderId).update({
+      const orderDoc = this.db.collection("orders").doc(orderId);
+
+      await orderDoc.update({
         fulfillmentStatus: status,
         updatedAt: new Date().toISOString(),
       });
@@ -803,7 +810,12 @@ export class FirebaseOrderService {
   async getOrder(orderId: string) {
     try {
       const orderDoc = await this.db.collection("orders").doc(orderId).get();
-      return orderDoc.exists ? { id: orderDoc.id, ...orderDoc.data() } : null;
+
+      if (!orderDoc.exists) {
+        return null;
+      }
+
+      return { id: orderDoc.id, ...orderDoc.data() };
     } catch (error) {
       console.error("Failed to get order:", error);
       throw new Error(`Failed to get order: ${error}`);
@@ -811,17 +823,21 @@ export class FirebaseOrderService {
   }
 
   /**
-   * Get all orders for a user
+   * Get user's orders
    */
-  async getUserOrders(userId: string) {
+  async getUserOrders(userId: string, limit: number = 50) {
     try {
       const ordersSnapshot = await this.db
         .collection("orders")
         .where("userId", "==", userId)
         .orderBy("createdAt", "desc")
+        .limit(limit)
         .get();
 
-      return ordersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      return ordersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
     } catch (error) {
       console.error("Failed to get user orders:", error);
       throw new Error(`Failed to get user orders: ${error}`);
@@ -829,7 +845,7 @@ export class FirebaseOrderService {
   }
 
   /**
-   * Get all orders (admin)
+   * Get all orders (for admin dashboard)
    */
   async getAllOrders(limit: number = 50) {
     try {
@@ -839,7 +855,10 @@ export class FirebaseOrderService {
         .limit(limit)
         .get();
 
-      return ordersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      return ordersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
     } catch (error) {
       console.error("Failed to get all orders:", error);
       throw new Error(`Failed to get all orders: ${error}`);
@@ -847,11 +866,9 @@ export class FirebaseOrderService {
   }
 
   /**
-   * Get order by payment reference (for webhook processing)
+   * Get order by payment reference
    */
-  async getOrderByPaymentReference(
-    paymentReference: string
-  ): Promise<{ exists: boolean; orderId?: string; data?: any }> {
+  async getOrderByPaymentReference(paymentReference: string) {
     try {
       const ordersSnapshot = await this.db
         .collection("orders")
@@ -860,17 +877,13 @@ export class FirebaseOrderService {
         .get();
 
       if (ordersSnapshot.empty) {
-        return { exists: false };
+        return null;
       }
 
       const doc = ordersSnapshot.docs[0];
-      return {
-        exists: true,
-        orderId: doc.id,
-        data: doc.data(),
-      };
+      return { id: doc.id, ...doc.data() };
     } catch (error) {
-      console.error("Error getting order by payment reference:", error);
+      console.error("Failed to get order by payment reference:", error);
       throw new Error(`Failed to get order by payment reference: ${error}`);
     }
   }

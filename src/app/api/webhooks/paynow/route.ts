@@ -1,9 +1,7 @@
 /**
  * Paynow Payment Webhook Handler
  * Receives payment notifications from Paynow payment gateway
- * Handles:
- * - Subscription payments (reference format: userId_currency_timestamp)
- * - Product orders (reference format: product_orderId_timestamp)
+ * Handles all test scenarios: SUCCESS, PENDING, FAILED, CANCELLED, INSUFFICIENT BALANCE
  * Documentation: https://developers.paynow.co.zw/docs/test_mode.html
  */
 
@@ -14,7 +12,6 @@ import {
   Currency,
 } from "@/lib/firebase-admin";
 import { PaynowService, PaynowWebhookPayload } from "@/lib/paynow";
-import { EmailService } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -45,7 +42,6 @@ export async function POST(req: NextRequest) {
         `${process.env.NEXT_PUBLIC_APP_URL}/success`
     );
     const firebaseService = new FirebaseSubscriptionService();
-    const orderService = new FirebaseOrderService();
 
     // Validate webhook payload
     if (!paynowService.validateWebhook(payload)) {
@@ -58,17 +54,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Determine payment type based on reference format
-    // Product orders: product_orderId_timestamp
-    // Subscriptions: userId_currency_timestamp
-    const isProductOrder = payload.reference.startsWith("product_");
-
-    if (isProductOrder) {
-      // Handle product order payment
-      return handleProductOrderPayment(payload, orderService, paynowService);
+    // Check if this is a product order payment (reference starts with "product_")
+    if (payload.reference.startsWith("product_")) {
+      console.log(
+        `[PAYNOW_WEBHOOK] Product order payment detected - Reference: ${payload.reference}`
+      );
+      return handleProductOrderPayment(payload, paynowService);
     }
 
-    // Extract user ID and currency from reference
+    // Extract user ID and currency from reference for subscription payments
     // Reference format: userId_currency_timestamp
     const referenceParts = payload.reference.split("_");
     const userId = referenceParts[0];
@@ -415,39 +409,45 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// Method not allowed for other HTTP methods
+export async function GET() {
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+}
+
 /**
  * Handle product order payment webhook
+ * Reference format: product_orderId_timestamp
  */
 async function handleProductOrderPayment(
   payload: PaynowWebhookPayload,
-  orderService: FirebaseOrderService,
   paynowService: PaynowService
-) {
-  const emailService = new EmailService();
+): Promise<NextResponse> {
   try {
-    // Extract order ID from reference (format: product_orderId_timestamp)
-    const referenceParts = payload.reference.split("_");
-    const orderId = referenceParts[1]; // orderId is the second part
+    const orderService = new FirebaseOrderService();
 
-    if (!orderId) {
+    // Extract order ID from reference: product_orderId_timestamp
+    const referenceParts = payload.reference.split("_");
+    if (referenceParts.length < 2) {
       console.error(
-        `[PAYNOW_WEBHOOK_PRODUCT] Order ID not found in reference: ${payload.reference}`
+        `[PAYNOW_WEBHOOK] Invalid product order reference format: ${payload.reference}`
       );
       return NextResponse.json(
-        { error: "Order ID not found in payment reference" },
+        { error: "Invalid product order reference format" },
         { status: 400 }
       );
     }
 
+    const orderId = referenceParts[1];
     console.log(
-      `[PAYNOW_WEBHOOK_PRODUCT] Processing product order payment - Order: ${orderId}, Status: ${payload.status}`
+      `[PAYNOW_WEBHOOK] Processing product order - Order ID: ${orderId}, Status: ${payload.status}`
     );
 
-    // Get order from Firestore
-    const order = await orderService.getOrder(orderId) as any;
-    if (!order) {
+    // Get order from database
+    const orderData = await orderService.getOrderByPaymentReference(payload.reference);
+
+    if (!orderData) {
       console.error(
-        `[PAYNOW_WEBHOOK_PRODUCT] Order not found: ${orderId}`
+        `[PAYNOW_WEBHOOK] Order not found for reference: ${payload.reference}`
       );
       return NextResponse.json(
         { error: "Order not found" },
@@ -455,51 +455,30 @@ async function handleProductOrderPayment(
       );
     }
 
+    // Type assertion for order data
+    const order = orderData as any;
+
     // Parse payment status
     const parsedStatus = paynowService.parsePaymentStatus(payload.status);
 
-    // Handle based on parsed status
+    console.log(
+      `[PAYNOW_WEBHOOK] Product order payment - Order ID: ${orderId}, Parsed Status: ${parsedStatus}`
+    );
+
+    // Handle based on payment status
     switch (parsedStatus) {
       case "SUCCESS": {
-        // Check if order is already paid (idempotency)
-        if (order.paymentStatus === "paid") {
-          console.log(
-            `[PAYNOW_WEBHOOK_PRODUCT] Order already paid: ${orderId}`
-          );
-          return NextResponse.json({
-            success: true,
-            message: "Order already paid",
-            orderId,
-          });
-        }
-
         // Update order payment status to paid
         await orderService.updateOrderPayment(
           orderId,
-          order.paymentMethod || "unknown",
-          payload.paynowreference,
+          order.paymentMethod || "paynow",
+          payload.reference,
           "paid"
         );
 
         console.log(
-          `[PAYNOW_WEBHOOK_PRODUCT] Successfully processed product order payment - Order: ${orderId}, Amount: ${payload.amount}`
+          `[PAYNOW_WEBHOOK] Product order payment successful - Order ID: ${orderId}, Amount: ${payload.amount}`
         );
-
-        // Send payment confirmation email (non-blocking)
-        if (order.userEmail && order.shippingAddress) {
-          emailService.sendPaymentConfirmation({
-            orderId,
-            customerEmail: order.userEmail,
-            customerName: order.shippingAddress.fullName,
-            productType: order.productType,
-            productDetails: order.productDetails,
-            amount: order.amount,
-            currency: order.currency,
-            shippingAddress: order.shippingAddress,
-            styleApplied: order.styleApplied,
-            styledImageUrl: order.styledImageUrl,
-          }).catch(err => console.error("Failed to send payment confirmation email:", err));
-        }
 
         return NextResponse.json({
           success: true,
@@ -510,13 +489,14 @@ async function handleProductOrderPayment(
 
       case "PENDING": {
         console.log(
-          `[PAYNOW_WEBHOOK_PRODUCT] Product order payment pending - Order: ${orderId}`
+          `[PAYNOW_WEBHOOK] Product order payment pending - Order ID: ${orderId}`
         );
+
         return NextResponse.json({
           success: true,
-          message: "Payment is pending",
+          message: "Product order payment is pending",
           status: "PENDING",
-          orderId,
+          pollUrl: payload.pollurl,
         });
       }
 
@@ -524,27 +504,26 @@ async function handleProductOrderPayment(
         // Update order payment status to failed
         await orderService.updateOrderPayment(
           orderId,
-          order.paymentMethod || "unknown",
-          payload.paynowreference,
+          order.paymentMethod || "paynow",
+          payload.reference,
           "failed"
         );
 
         console.log(
-          `[PAYNOW_WEBHOOK_PRODUCT] Product order payment failed - Order: ${orderId}, Reason: ${paynowService.getFailureReason(payload.status)}`
+          `[PAYNOW_WEBHOOK] Product order payment failed - Order ID: ${orderId}, Reason: ${paynowService.getFailureReason(payload.status)}`
         );
 
         return NextResponse.json({
           success: false,
-          message: "Payment failed",
+          message: "Product order payment failed",
           status: "FAILED",
           reason: paynowService.getFailureReason(payload.status),
-          orderId,
         });
       }
 
       default:
         console.warn(
-          `[PAYNOW_WEBHOOK_PRODUCT] Unknown payment status: ${payload.status}`
+          `[PAYNOW_WEBHOOK] Unknown product order payment status: ${payload.status}`
         );
         return NextResponse.json({
           success: false,
@@ -553,7 +532,10 @@ async function handleProductOrderPayment(
         });
     }
   } catch (error) {
-    console.error("[PAYNOW_WEBHOOK_PRODUCT] Error processing product order payment:", error);
+    console.error(
+      "[PAYNOW_WEBHOOK] Error processing product order payment:",
+      error
+    );
     return NextResponse.json(
       {
         error: "Failed to process product order payment",
@@ -562,9 +544,4 @@ async function handleProductOrderPayment(
       { status: 500 }
     );
   }
-}
-
-// Method not allowed for other HTTP methods
-export async function GET() {
-  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }

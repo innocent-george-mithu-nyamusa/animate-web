@@ -2,65 +2,64 @@ import { NextRequest, NextResponse } from "next/server";
 import { FirebaseAuthService } from "@/lib/firebase-auth";
 import { FirebaseOrderService } from "@/lib/firebase-admin";
 import { calculateProductPrice } from "@/lib/product-pricing";
-import { EmailService } from "@/lib/email";
-import type { CreateOrderRequest, CreateOrderResponse } from "@/types/products";
+import type {
+  ProductType,
+  PlushToyDetails,
+  FramedPictureDetails,
+  ShippingAddress,
+} from "@/types/products";
 
 const authService = new FirebaseAuthService();
 const orderService = new FirebaseOrderService();
-const emailService = new EmailService();
 
 export async function POST(request: NextRequest) {
   try {
-    const body: CreateOrderRequest = await request.json();
+    const body = await request.json();
     const {
       idToken,
       productType,
       productDetails,
-      styledImageData,
+      styledImageDataUrl,
       styleApplied,
       currency,
       shippingAddress,
     } = body;
 
-    // Validate required fields
-    if (!idToken) {
-      return NextResponse.json(
-        { success: false, message: "Authentication token is required" },
-        { status: 401 }
-      );
-    }
-
-    if (!productType || !productDetails || !styledImageData || !styleApplied) {
-      return NextResponse.json(
-        { success: false, message: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    // Verify Firebase ID token and get user
+    // Verify user authentication
     const decodedToken = await authService.verifyIdToken(idToken);
     const userId = decodedToken.uid;
     const userEmail = decodedToken.email || "";
 
     // Validate shipping address
-    if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.addressLine1) {
+    if (
+      !shippingAddress ||
+      !shippingAddress.fullName ||
+      !shippingAddress.phone ||
+      !shippingAddress.addressLine1 ||
+      !shippingAddress.city ||
+      !shippingAddress.country
+    ) {
       return NextResponse.json(
-        { success: false, message: "Complete shipping address is required" },
+        { success: false, message: "Invalid shipping address" },
         { status: 400 }
       );
     }
 
     // Calculate product price
-    const amount = calculateProductPrice(productType, productDetails, currency);
+    const amount = calculateProductPrice(
+      productType,
+      productDetails,
+      currency
+    );
 
-    // Generate unique order ID
-    const orderId = `order_${Date.now()}_${userId.substring(0, 8)}`;
+    // Generate order ID
+    const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
 
     // Upload styled image to Firebase Storage
     const styledImageUrl = await orderService.uploadStyledImage(
       userId,
       orderId,
-      styledImageData
+      styledImageDataUrl
     );
 
     // Create order in Firestore
@@ -75,41 +74,22 @@ export async function POST(request: NextRequest) {
       amount,
       currency,
       shippingAddress,
-      metadata: {
-        createdVia: "web",
-        userAgent: request.headers.get("user-agent") || "unknown",
-      },
     });
 
-    // Send order confirmation email (non-blocking)
-    emailService.sendOrderConfirmation({
-      orderId,
-      customerEmail: userEmail,
-      customerName: shippingAddress.fullName,
-      productType,
-      productDetails,
-      amount,
-      currency,
-      shippingAddress,
-      styleApplied,
-      styledImageUrl,
-    }).catch(err => console.error("Failed to send order confirmation email:", err));
+    console.log(`Order created: ${orderId} for user: ${userId}`);
 
-    const response: CreateOrderResponse = {
+    return NextResponse.json({
       success: true,
       orderId,
       amount,
       currency,
-      message: "Order created successfully",
-    };
-
-    return NextResponse.json(response, { status: 201 });
-  } catch (error: any) {
-    console.error("Error creating order:", error);
+    });
+  } catch (error) {
+    console.error("Order creation error:", error);
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to create order",
+        message: error instanceof Error ? error.message : "Failed to create order",
       },
       { status: 500 }
     );
@@ -118,15 +98,17 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const { searchParams } = new URL(request.url);
+    const idToken = searchParams.get("idToken");
+
+    if (!idToken) {
       return NextResponse.json(
-        { success: false, message: "Authentication token is required" },
+        { success: false, message: "Authentication required" },
         { status: 401 }
       );
     }
 
-    const idToken = authHeader.substring(7);
+    // Verify user authentication
     const decodedToken = await authService.verifyIdToken(idToken);
     const userId = decodedToken.uid;
 
@@ -137,12 +119,12 @@ export async function GET(request: NextRequest) {
       success: true,
       orders,
     });
-  } catch (error: any) {
-    console.error("Error fetching orders:", error);
+  } catch (error) {
+    console.error("Get orders error:", error);
     return NextResponse.json(
       {
         success: false,
-        message: error.message || "Failed to fetch orders",
+        message: error instanceof Error ? error.message : "Failed to get orders",
       },
       { status: 500 }
     );
