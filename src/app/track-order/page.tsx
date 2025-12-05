@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase-client";
 import { formatPrice } from "@/lib/product-pricing";
@@ -29,7 +29,7 @@ interface Order {
   updatedAt: string;
 }
 
-export default function TrackOrderPage() {
+function TrackOrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderIdFromUrl = searchParams.get("id");
@@ -346,5 +346,17 @@ export default function TrackOrderPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-950 flex items-center justify-center">
+        <p className="text-purple-200">Loading...</p>
+      </div>
+    }>
+      <TrackOrderContent />
+    </Suspense>
   );
 }
