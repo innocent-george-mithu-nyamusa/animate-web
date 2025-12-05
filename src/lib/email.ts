@@ -133,8 +133,8 @@ export class EmailService {
         html,
       });
 
-      console.log(`Order confirmation email sent: ${result.id}`);
-      return { success: true, emailId: result.id };
+      console.log(`Order confirmation email sent: ${result.data?.id}`);
+      return { success: true, emailId: result.data?.id };
     } catch (error) {
       console.error("Failed to send order confirmation email:", error);
       // Don't throw - email failures shouldn't break the order flow
@@ -221,8 +221,8 @@ export class EmailService {
         html,
       });
 
-      console.log(`Payment confirmation email sent: ${result.id}`);
-      return { success: true, emailId: result.id };
+      console.log(`Payment confirmation email sent: ${result.data?.id}`);
+      return { success: true, emailId: result.data?.id };
     } catch (error) {
       console.error("Failed to send payment confirmation email:", error);
       return { success: false, error };
@@ -295,8 +295,8 @@ export class EmailService {
         html,
       });
 
-      console.log(`Shipping notification email sent: ${result.id}`);
-      return { success: true, emailId: result.id };
+      console.log(`Shipping notification email sent: ${result.data?.id}`);
+      return { success: true, emailId: result.data?.id };
     } catch (error) {
       console.error("Failed to send shipping notification email:", error);
       return { success: false, error };
