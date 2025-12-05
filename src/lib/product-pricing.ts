@@ -35,3 +35,57 @@ export function calculateProductPrice(
 export function formatPrice(amount: number, currency: 'USD' | 'ZWG'): string {
   return `${currency} ${amount.toFixed(2)}`;
 }
+
+export function getPlushSizeOptions(currency: 'USD' | 'ZWG') {
+  const currencyKey = currency.toLowerCase() as 'usd' | 'zwg';
+  return [
+    {
+      value: 'small',
+      label: 'Small',
+      price: PLUSH_TOY_PRICING.small[currencyKey],
+      formattedPrice: formatPrice(PLUSH_TOY_PRICING.small[currencyKey], currency)
+    },
+    {
+      value: 'medium',
+      label: 'Medium',
+      price: PLUSH_TOY_PRICING.medium[currencyKey],
+      formattedPrice: formatPrice(PLUSH_TOY_PRICING.medium[currencyKey], currency)
+    },
+    {
+      value: 'large',
+      label: 'Large',
+      price: PLUSH_TOY_PRICING.large[currencyKey],
+      formattedPrice: formatPrice(PLUSH_TOY_PRICING.large[currencyKey], currency)
+    },
+    {
+      value: 'xl',
+      label: 'Extra Large',
+      price: PLUSH_TOY_PRICING.xl[currencyKey],
+      formattedPrice: formatPrice(PLUSH_TOY_PRICING.xl[currencyKey], currency)
+    },
+  ];
+}
+
+export function getFrameTypeOptions(currency: 'USD' | 'ZWG') {
+  const currencyKey = currency.toLowerCase() as 'usd' | 'zwg';
+  return [
+    {
+      value: 'custom_plush',
+      label: 'Custom Plush Frame',
+      price: FRAMED_PICTURE_PRICING.custom_plush[currencyKey],
+      formattedPrice: formatPrice(FRAMED_PICTURE_PRICING.custom_plush[currencyKey], currency)
+    },
+    {
+      value: 'classic_3d',
+      label: 'Classic 3D Frame',
+      price: FRAMED_PICTURE_PRICING.classic_3d[currencyKey],
+      formattedPrice: formatPrice(FRAMED_PICTURE_PRICING.classic_3d[currencyKey], currency)
+    },
+    {
+      value: 'other_designs',
+      label: 'Other Designs',
+      price: FRAMED_PICTURE_PRICING.other_designs[currencyKey],
+      formattedPrice: formatPrice(FRAMED_PICTURE_PRICING.other_designs[currencyKey], currency)
+    },
+  ];
+}
