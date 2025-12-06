@@ -1,0 +1,15 @@
+# robots.txt for iconicme - AI Image Toy Maker
+
+# Allow all search engines to crawl the entire site
+User-agent: *
+Allow: /
+
+# Disallow crawling of API routes and internal pages
+Disallow: /api/
+Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://iconicme.shop/sitemap.xml
+
+# Crawl-delay for polite crawling (optional)
+Crawl-delay: 1
