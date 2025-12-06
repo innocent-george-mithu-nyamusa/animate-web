@@ -6,9 +6,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaynowService } from "@/lib/paynow";
 import { FirebaseAuthService } from "@/lib/firebase-auth";
+import { rateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    // Apply rate limiting
+    const identifier = getClientIdentifier(req);
+    const rateLimitResult = rateLimit(identifier, RATE_LIMITS.PAYMENT);
+
+    if (!rateLimitResult.allowed) {
+      console.warn(`[RATE_LIMIT] Payment initiation blocked for ${identifier}`);
+      return NextResponse.json(
+        {
+          error: "Too many payment requests. Please try again later.",
+          retryAfter: rateLimitResult.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimitResult.retryAfter),
+            "X-RateLimit-Limit": String(RATE_LIMITS.PAYMENT.maxRequests),
+            "X-RateLimit-Remaining": String(rateLimitResult.remaining),
+          },
+        }
+      );
+    }
+
     const {
       idToken,
       paymentMethod,
