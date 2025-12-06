@@ -6,9 +6,33 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { FirebaseAuthService } from "@/lib/firebase-auth";
+import { rateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    // Apply rate limiting
+    const identifier = getClientIdentifier(req);
+    const rateLimitResult = rateLimit(identifier, RATE_LIMITS.AUTH);
+
+    if (!rateLimitResult.allowed) {
+      console.warn(`[RATE_LIMIT] Signup blocked for ${identifier}`);
+      return NextResponse.json(
+        {
+          error: "Too many signup attempts. Please try again later.",
+          retryAfter: rateLimitResult.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimitResult.retryAfter),
+            "X-RateLimit-Limit": String(RATE_LIMITS.AUTH.maxRequests),
+            "X-RateLimit-Remaining": String(rateLimitResult.remaining),
+            "X-RateLimit-Reset": String(rateLimitResult.resetTime),
+          },
+        }
+      );
+    }
+
     const { idToken, displayName } = await req.json();
 
     // Validate required fields
