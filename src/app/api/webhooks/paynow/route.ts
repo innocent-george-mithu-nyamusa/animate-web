@@ -13,8 +13,56 @@ import {
 } from "@/lib/firebase-admin";
 import { PaynowService, PaynowWebhookPayload } from "@/lib/paynow";
 
+/**
+ * SECURITY: Validate webhook request is from Paynow's servers
+ * Set PAYNOW_WEBHOOK_IPS environment variable with comma-separated IPs
+ * Example: PAYNOW_WEBHOOK_IPS="197.221.254.0/24,41.57.87.0/24"
+ */
+function validateWebhookIP(req: NextRequest): boolean {
+  // Get allowed IPs from environment variable (comma-separated)
+  const allowedIPs = process.env.PAYNOW_WEBHOOK_IPS?.split(",").map(ip => ip.trim()) || [];
+
+  // If no IPs configured, allow all (for development - should be configured in production)
+  if (allowedIPs.length === 0) {
+    console.warn("[WEBHOOK_SECURITY] No IP whitelist configured - webhook accessible from any IP");
+    return true;
+  }
+
+  // Get request IP from headers
+  const forwarded = req.headers.get("x-forwarded-for");
+  const realIp = req.headers.get("x-real-ip");
+  const cfConnectingIp = req.headers.get("cf-connecting-ip");
+
+  const requestIp = cfConnectingIp || realIp || (forwarded ? forwarded.split(",")[0].trim() : null);
+
+  if (!requestIp) {
+    console.error("[WEBHOOK_SECURITY] Could not determine request IP");
+    return false;
+  }
+
+  // Check if IP is in whitelist
+  const isAllowed = allowedIPs.includes(requestIp);
+
+  if (!isAllowed) {
+    console.error(`[WEBHOOK_SECURITY] BLOCKED webhook from unauthorized IP: ${requestIp}`);
+    console.error(`[WEBHOOK_SECURITY] Allowed IPs: ${allowedIPs.join(", ")}`);
+  } else {
+    console.log(`[WEBHOOK_SECURITY] IP validation PASSED for ${requestIp}`);
+  }
+
+  return isAllowed;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    // SECURITY: Validate request is from Paynow's servers
+    if (!validateWebhookIP(req)) {
+      return NextResponse.json(
+        { error: "Forbidden - Unauthorized IP address" },
+        { status: 403 }
+      );
+    }
+
     // Paynow sends data as form-urlencoded or query parameters
     const formData = await req.formData();
 
