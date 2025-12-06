@@ -11,6 +11,7 @@ import { GoogleGenAI } from "@google/genai";
 import { FirebaseAuthService } from "@/lib/firebase-auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { rateLimit, getClientIdentifier, RATE_LIMITS } from "@/lib/rate-limit";
 
 // Initialize Firebase Admin if not already initialized
 if (!getApps().length) {
@@ -25,6 +26,28 @@ if (!getApps().length) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Apply rate limiting (before parsing body to prevent resource exhaustion)
+    const identifier = getClientIdentifier(req);
+    const rateLimitResult = rateLimit(identifier, RATE_LIMITS.IMAGE_PROCESSING);
+
+    if (!rateLimitResult.allowed) {
+      console.warn(`[RATE_LIMIT] Image processing blocked for ${identifier}`);
+      return NextResponse.json(
+        {
+          error: "Too many image processing requests. Please try again later.",
+          retryAfter: rateLimitResult.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimitResult.retryAfter),
+            "X-RateLimit-Limit": String(RATE_LIMITS.IMAGE_PROCESSING.maxRequests),
+            "X-RateLimit-Remaining": String(rateLimitResult.remaining),
+          },
+        }
+      );
+    }
+
     const { image, prompt, idToken } = await req.json();
 
     // Validate inputs
