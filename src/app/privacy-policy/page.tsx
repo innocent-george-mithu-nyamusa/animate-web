@@ -1,7 +1,19 @@
-"use client";
-
 import React from 'react';
-import Head from 'next/head';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Privacy Policy - iconicme AI Image Toy Maker",
+  description: "Privacy policy for iconicme - AI-powered image toy maker. Learn how we collect, use, and protect your data when creating custom plush toys and figurines.",
+  openGraph: {
+    title: "Privacy Policy - iconicme",
+    description: "Learn how iconicme protects your privacy while creating custom toys",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
 interface SectionProps {
   title: string;
@@ -23,14 +35,7 @@ const PrivacyPolicyPage: React.FC = () => {
   const lastUpdated = "January 15, 2025";
 
   return (
-    <>
-      <Head>
-        <title>Privacy Policy - Animate | Image Stylizer</title>
-        <meta name="description" content="Privacy Policy for Animate - Image Stylizer by Pixelspulse Private Limited" />
-        <meta name="robots" content="index, follow" />
-      </Head>
-
-      <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white shadow-sm border-b">
           <div className="max-w-4xl mx-auto px-4 py-6">
@@ -261,7 +266,6 @@ const PrivacyPolicyPage: React.FC = () => {
           </div>
         </footer>
       </div>
-    </>
   );
 };
 
