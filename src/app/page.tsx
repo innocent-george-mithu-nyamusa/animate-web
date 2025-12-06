@@ -24,6 +24,8 @@ import { firebaseAuth } from "@/lib/firebase-client";
 import type { User } from "firebase/auth";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { getApp } from "firebase/app";
+import StructuredData from "@/components/StructuredData";
+import FAQSchema from "@/components/FAQSchema";
 
 // Style definitions with their prompts
 const STYLES = [
@@ -555,6 +557,10 @@ export default function AnimateSPA() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-950 text-white">
+      {/* Structured Data for SEO */}
+      <StructuredData />
+      <FAQSchema />
+
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
