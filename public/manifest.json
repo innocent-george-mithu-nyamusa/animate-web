@@ -1,6 +1,6 @@
 {
-  "name": "iconicme - AI Image Toy Maker",
-  "short_name": "iconicme",
+  "name": "IconicMe - AI Image Toy Maker",
+  "short_name": "IconicMe",
   "description": "Transform your photos into custom toy designs with AI. Create plush toys, figurines, anime collectibles & more.",
   "start_url": "/",
   "display": "standalone",

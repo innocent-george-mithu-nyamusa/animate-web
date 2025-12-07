@@ -2,10 +2,10 @@ import React from 'react';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Privacy Policy - iconicme AI Image Toy Maker",
-  description: "Privacy policy for iconicme - AI-powered image toy maker. Learn how we collect, use, and protect your data when creating custom plush toys and figurines.",
+  title: "Privacy Policy - IconicMe AI Image Toy Maker",
+  description: "Privacy policy for IconicMe - AI-powered image toy maker. Learn how we collect, use, and protect your data when creating custom plush toys and figurines.",
   openGraph: {
-    title: "Privacy Policy - iconicme",
+    title: "Privacy Policy - IconicMe",
     description: "Learn how iconicme protects your privacy while creating custom toys",
     type: "website",
   },

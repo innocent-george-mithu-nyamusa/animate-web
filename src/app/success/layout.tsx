@@ -1,10 +1,10 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Payment Success - iconicme AI Image Toy Maker",
+  title: "Payment Success - IconicMe AI Image Toy Maker",
   description: "Your iconicme subscription payment was successful! Start creating custom plush toys, figurines, and collectibles with AI.",
   openGraph: {
-    title: "Payment Success - iconicme",
+    title: "Payment Success - IconicMe",
     description: "Your subscription is now active!",
     type: "website",
   },

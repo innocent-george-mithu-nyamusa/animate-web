@@ -1,4 +1,4 @@
-# robots.txt for iconicme - AI Image Toy Maker
+# robots.txt for IconicMe - AI Image Toy Maker
 
 # Allow all search engines to crawl the entire site
 User-agent: *

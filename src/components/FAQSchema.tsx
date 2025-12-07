@@ -7,34 +7,34 @@ export default function FAQSchema() {
     mainEntity: [
       {
         '@type': 'Question',
-        name: 'What is iconicme?',
+        name: 'What is IconicMe?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'iconicme is an AI-powered image toy maker that transforms your photos into custom toy designs. You can create plush toys, figurines, anime collectibles, Funko Pop-style figures, and more using our 10+ artistic styles.',
+          text: 'IconicMe is an AI-powered image toy maker that transforms your photos into custom toy designs. You can create plush toys, figurines, anime collectibles, Funko Pop-style figures, and more using our 10+ artistic styles.',
         },
       },
       {
         '@type': 'Question',
-        name: 'How many toy styles does iconicme offer?',
+        name: 'How many toy styles does IconicMe offer?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'iconicme offers 10+ unique toy styles including Classic Figure, Plush Toy, Retro Action Hero, Superhero Collectible, Pet Companion, Studio Ghibli, 16-Bit Character, Anime Figure, Funko Pop, and Pen Sketch styles.',
+          text: 'IconicMe offers 10+ unique toy styles including Classic Figure, Plush Toy, Retro Action Hero, Superhero Collectible, Pet Companion, Studio Ghibli, 16-Bit Character, Anime Figure, Funko Pop, and Pen Sketch styles.',
         },
       },
       {
         '@type': 'Question',
-        name: 'What payment methods does iconicme accept?',
+        name: 'What payment methods does IconicMe accept?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'iconicme accepts Ecocash, OneMoney, and Visa/Mastercard payments. We support both USD and ZWG currencies for Zimbabwe customers, with international card payments available worldwide.',
+          text: 'IconicMe accepts Ecocash, OneMoney, and Visa/Mastercard payments. We support both USD and ZWG currencies for Zimbabwe customers, with international card payments available worldwide.',
         },
       },
       {
         '@type': 'Question',
-        name: 'How much does iconicme cost?',
+        name: 'How much does IconicMe cost?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'iconicme offers three plans: Free (3 generations/month), Standard ($9.99 USD / 297 ZWG per month for 120 generations), and Premium ($19.99 USD / 620 ZWG per month for 280 generations with commercial license).',
+          text: 'IconicMe offers three plans: Free (3 generations/month), Standard ($9.99 USD / 297 ZWG per month for 120 generations), and Premium ($19.99 USD / 620 ZWG per month for 280 generations with commercial license).',
         },
       },
       {
@@ -42,15 +42,15 @@ export default function FAQSchema() {
         name: 'Can I order physical toys from my designs?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes! Once you create your custom toy design with iconicme, you can order physical versions of your plush toys, figurines, or collectibles. You can also download the digital designs instantly.',
+          text: 'Yes! Once you create your custom toy design with IconicMe, you can order physical versions of your plush toys, figurines, or collectibles. You can also download the digital designs instantly.',
         },
       },
       {
         '@type': 'Question',
-        name: 'What AI technology powers iconicme?',
+        name: 'What AI technology powers IconicMe?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'iconicme uses Google Gemini 2.5 Flash Image AI technology to transform your photos into professional toy designs. Our AI models are trained on various toy styles and collectibles.',
+          text: 'IconicMe uses Google Gemini 2.5 Flash Image AI technology to transform your photos into professional toy designs. Our AI models are trained on various toy styles and collectibles.',
         },
       },
       {
@@ -74,7 +74,7 @@ export default function FAQSchema() {
         name: 'What image formats are supported?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'iconicme supports all common image formats including JPG, JPEG, PNG, and WEBP. For best results, use clear, well-lit photos with good resolution.',
+          text: 'IconicMe supports all common image formats including JPG, JPEG, PNG, and WEBP. For best results, use clear, well-lit photos with good resolution.',
         },
       },
       {
