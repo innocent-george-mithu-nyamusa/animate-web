@@ -26,6 +26,7 @@ import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { getApp } from "firebase/app";
 import StructuredData from "@/components/StructuredData";
 import FAQSchema from "@/components/FAQSchema";
+import SoftwareApplicationSchema from "@/components/SoftwareApplicationSchema";
 
 // Style definitions with their prompts
 const STYLES = [
@@ -559,6 +560,7 @@ export default function AnimateSPA() {
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-950 text-white">
       {/* Structured Data for SEO */}
       <StructuredData />
+      <SoftwareApplicationSchema />
       <FAQSchema />
 
       {/* Navigation */}
