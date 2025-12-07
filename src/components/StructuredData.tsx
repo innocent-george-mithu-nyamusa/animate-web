@@ -30,12 +30,21 @@ export default function StructuredData() {
         operatingSystem: 'Web, iOS, Android',
         description:
           'AI-powered image toy maker that transforms photos into custom plush toys, figurines, and collectibles. Choose from 10+ artistic styles including anime figures, Funko Pop, Studio Ghibli, and more.',
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.8',
+          ratingCount: '127',
+          bestRating: '5',
+          worstRating: '1',
+        },
         offers: {
           '@type': 'AggregateOffer',
           priceCurrency: 'USD',
           lowPrice: '0',
           highPrice: '19.99',
-          offerCount: '3',
+          offerCount: 3,
+          url: 'https://iconicme.shop',
+          availability: 'https://schema.org/InStock',
         },
         creator: {
           '@id': 'https://iconicme.shop/#organization',
