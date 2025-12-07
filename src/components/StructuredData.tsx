@@ -12,8 +12,14 @@ export default function StructuredData() {
         logo: {
           '@type': 'ImageObject',
           url: 'https://iconicme.shop/prod-logo.png',
+          width: 512,
+          height: 512,
         },
-        sameAs: [],
+        contactPoint: {
+          '@type': 'ContactPoint',
+          contactType: 'Customer Service',
+          email: 'consult@pixels.co.zw',
+        },
       },
       {
         '@type': 'WebApplication',
@@ -62,39 +68,65 @@ export default function StructuredData() {
         },
         hasOfferCatalog: {
           '@type': 'OfferCatalog',
-          name: 'iconicme Subscription Plans',
+          name: 'IconicMe Subscription Plans',
           itemListElement: [
             {
               '@type': 'Offer',
               itemOffered: {
                 '@type': 'Product',
-                name: 'Free Plan',
+                name: 'IconicMe Free Plan',
                 description: '3 AI toy generations per month with all 10 styles',
+                brand: {
+                  '@type': 'Brand',
+                  name: 'IconicMe',
+                },
+                image: 'https://iconicme.shop/prod-logo.png',
               },
               price: '0',
               priceCurrency: 'USD',
+              url: 'https://iconicme.shop',
+              availability: 'https://schema.org/InStock',
+              validFrom: new Date().toISOString().split('T')[0],
             },
             {
               '@type': 'Offer',
               itemOffered: {
                 '@type': 'Product',
-                name: 'Standard Plan',
+                name: 'IconicMe Standard Plan',
                 description:
                   '120 AI toy generations per month with high resolution and priority processing',
+                brand: {
+                  '@type': 'Brand',
+                  name: 'IconicMe',
+                },
+                image: 'https://iconicme.shop/prod-logo.png',
               },
               price: '9.99',
               priceCurrency: 'USD',
+              url: 'https://iconicme.shop',
+              availability: 'https://schema.org/InStock',
+              validFrom: new Date().toISOString().split('T')[0],
+              priceValidUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
             },
             {
               '@type': 'Offer',
               itemOffered: {
                 '@type': 'Product',
-                name: 'Premium Plan',
+                name: 'IconicMe Premium Plan',
                 description:
                   '280 AI toy generations per month with ultra-high resolution, lightning-fast processing, and commercial license',
+                brand: {
+                  '@type': 'Brand',
+                  name: 'IconicMe',
+                },
+                image: 'https://iconicme.shop/prod-logo.png',
               },
               price: '19.99',
               priceCurrency: 'USD',
+              url: 'https://iconicme.shop',
+              availability: 'https://schema.org/InStock',
+              validFrom: new Date().toISOString().split('T')[0],
+              priceValidUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
             },
           ],
         },
