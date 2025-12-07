@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
           invoiceId: reference,
           items: [
             {
-              name: `Animate Subscription - ${currency} ${amount}`,
+              name: `IconicMe Subscription - ${currency} ${amount}`,
               amount,
             },
           ],
@@ -179,7 +179,7 @@ export async function POST(req: NextRequest) {
         invoiceId: reference,
         items: [
           {
-            name: `Animate Subscription - ${currency} ${amount}`,
+            name: `IconicMe Subscription - ${currency} ${amount}`,
             amount,
           },
         ],

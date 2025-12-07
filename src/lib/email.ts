@@ -41,7 +41,7 @@ export class EmailService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Confirmation - Animate</title>
+  <title>Order Confirmation - IconicMe</title>
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -114,7 +114,7 @@ export class EmailService {
       </div>
 
       <p>If you have any questions about your order, please don't hesitate to contact us.</p>
-      <p>Thank you for choosing Animate!</p>
+      <p>Thank you for choosing IconicMe!</p>
     </div>
 
     <div class="footer">
@@ -127,7 +127,7 @@ export class EmailService {
       `;
 
       const result = await resend.emails.send({
-        from: "Animate <orders@pixels.co.zw>", // Update with your verified domain
+        from: "IconicMe <orders@iconicme.shop>", // Update with your verified domain
         to: data.customerEmail,
         subject: `Order Confirmation - ${data.orderId}`,
         html,
@@ -158,7 +158,7 @@ export class EmailService {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Received - Animate</title>
+  <title>Payment Received - IconicMe</title>
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -215,7 +215,7 @@ export class EmailService {
       `;
 
       const result = await resend.emails.send({
-        from: "Animate <orders@pixels.co.zw>",
+        from: "IconicMe <orders@iconicme.shop>",
         to: data.customerEmail,
         subject: `Payment Confirmed - ${data.orderId}`,
         html,
@@ -244,7 +244,7 @@ export class EmailService {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Your Order Has Shipped - Animate</title>
+  <title>Your Order Has Shipped - IconicMe</title>
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -277,7 +277,7 @@ export class EmailService {
         <a href="${process.env.NEXT_PUBLIC_APP_URL}/track-order?id=${orderId}" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; text-decoration: none; border-radius: 6px;">Track Your Order</a>
       </div>
 
-      <p>Thank you for choosing Animate!</p>
+      <p>Thank you for choosing IconicMe!</p>
     </div>
 
     <div class="footer">
@@ -289,7 +289,7 @@ export class EmailService {
       `;
 
       const result = await resend.emails.send({
-        from: "Animate <orders@pixels.co.zw>",
+        from: "IconicMe <orders@iconicme.shop>",
         to: customerEmail,
         subject: `Your Order Has Shipped - ${orderId}`,
         html,

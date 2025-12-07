@@ -62,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       subscriptionId: subscriptionData?.subscriptionId || transactionData?.subscriptionId || '',
       orderId: transactionData?.orderId || subscriptionData?.metadata?.orderId || '',
       orderNumber: transactionData?.metadata?.orderNumber || Math.floor(Math.random() * 1000000),
-      productName: subscriptionData?.metadata?.productName || 'Animate Pro',
+      productName: subscriptionData?.metadata?.productName || 'IconicMe Pro',
       variantName: subscriptionData?.metadata?.variantName || 'Subscription',
       userEmail: userData?.email || subscriptionData?.customerEmail || '',
       userName: userData?.name || subscriptionData?.metadata?.customerName || 'User',
@@ -139,7 +139,7 @@ function generateReceiptHTML(data: any): string {
     </head>
     <body>
       <div class="header">
-        <h1>Animate</h1>
+        <h1>IconicMe</h1>
         <p>AI Animation Platform</p>
         <p style="margin-top: 20px; font-size: 18px;">Receipt #${data.orderNumber}</p>
       </div>
@@ -191,8 +191,8 @@ function generateReceiptHTML(data: any): string {
       </div>
 
       <div class="footer">
-        <p>Thank you for your subscription to Animate!</p>
-        <p>Questions? Contact support at support@animateapp.com</p>
+        <p>Thank you for your subscription to IconicMe!</p>
+        <p>Questions? Contact support at support@iconicme.shop</p>
       </div>
     </body>
     </html>

@@ -22,11 +22,11 @@ const DataDeletionPage = () => {
           <div className="flex items-center space-x-3">
             <img 
               src="/prod-logo.png"
-              alt="Animate Logo" 
+              alt="IconicMe Logo" 
               className="w-10 h-10 rounded-xl object-contain"
             />
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Animate</h1>
+              <h1 className="text-2xl font-bold text-gray-900">IconicMe</h1>
               <p className="text-sm text-gray-600">Image Style Editor</p>
             </div>
           </div>
@@ -41,7 +41,7 @@ const DataDeletionPage = () => {
             <h1 className="text-4xl font-bold text-gray-900">Data Deletion Request</h1>
           </div>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Request deletion of your personal data from <strong>Animate</strong> by our development team
+            Request deletion of your personal data from <strong>IconicMe</strong> by our development team
           </p>
         </div>
 
@@ -59,7 +59,7 @@ const DataDeletionPage = () => {
                   <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm mr-4">1</div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-2">Fill out the form below</h3>
-                    <p className="text-gray-600">Provide your email address and specify what data you'd like deleted from Animate.</p>
+                    <p className="text-gray-600">Provide your email address and specify what data you'd like deleted from IconicMe.</p>
                   </div>
                 </div>
                 
@@ -98,9 +98,9 @@ const DataDeletionPage = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter the email associated with your Animate account"
+                    placeholder="Enter the email associated with your IconicMe account"
                   />
-                  <p className="text-sm text-gray-500 mt-1">This must match the email used in your Animate account or payment information</p>
+                  <p className="text-sm text-gray-500 mt-1">This must match the email used in your IconicMe account or payment information</p>
                 </div>
                 
                 <div>
@@ -158,7 +158,7 @@ const DataDeletionPage = () => {
                 </li>
                 <li className="flex items-start">
                   <div className="w-2 h-2 bg-red-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                  <span><strong>Image Processing History:</strong> Records of images you've styled with Animate</span>
+                  <span><strong>Image Processing History:</strong> Records of images you've styled with IconicMe</span>
                 </li>
                 <li className="flex items-start">
                   <div className="w-2 h-2 bg-red-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
@@ -228,9 +228,9 @@ const DataDeletionPage = () => {
               <ul className="space-y-2 text-yellow-800">
                 <li>• Data deletion is <strong>permanent and cannot be undone</strong></li>
                 <li>• Processing time is typically 2-3 business days after identity verification</li>
-                <li>• You'll need to create a new account if you want to use Animate again</li>
+                <li>• You'll need to create a new account if you want to use IconicMe again</li>
                 <li>• Some data may be retained for legal compliance as outlined above</li>
-                <li>• Contact us at <strong>consult@pixels.co.zw</strong> if you have questions</li>
+                <li>• Contact us at <strong>consult@iconicme.shop</strong> if you have questions</li>
               </ul>
             </div>
           </div>
@@ -239,7 +239,7 @@ const DataDeletionPage = () => {
         {/* Footer */}
         <div className="text-center mt-12 pt-8 border-t border-gray-200">
           <p className="text-gray-600">
-            This page is linked from the <strong>Animate</strong> app listing on Google Play Store
+            This page is linked from the <strong>IconicMe</strong> app listing on Google Play Store
           </p>
           {/* <p className="text-sm text-gray-500 mt-2">
             Last updated: {new Date().toLocaleDateString()}

@@ -127,10 +127,10 @@ function TrackOrderContent() {
             <div className="flex items-center space-x-3">
               <img
                 src="/prod-logo.png"
-                alt="Animate"
+                alt="IconicMe"
                 className="w-10 h-10 rounded-xl object-contain"
               />
-              <span className="text-2xl font-bold">Animate</span>
+              <span className="text-2xl font-bold">IconicMe</span>
             </div>
             <button
               onClick={() => router.push("/")}

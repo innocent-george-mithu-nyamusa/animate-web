@@ -382,7 +382,7 @@ export default function AnimateSPA() {
 
     const link = document.createElement('a');
     link.href = styledImage;
-    link.download = `animate-${selectedStyle.id}-${Date.now()}.png`;
+    link.download = `iconicme-${selectedStyle.id}-${Date.now()}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -568,10 +568,10 @@ export default function AnimateSPA() {
             <div className="flex items-center space-x-3">
               <img
                 src="/prod-logo.png"
-                alt="Animate"
+                alt="IconicMe Logo"
                 className="w-10 h-10 rounded-xl object-contain"
               />
-              <span className="text-2xl font-bold">Animate</span>
+              <span className="text-2xl font-bold">IconicMe</span>
             </div>
 
             {/* Desktop Navigation */}

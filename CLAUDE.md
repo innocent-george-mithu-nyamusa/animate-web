@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the web backend and landing page for **Animate** - an AI-powered image stylization mobile app. The project handles subscription payments via Paynow (supporting Ecocash, OneMoney, and card payments), manages user authentication with Firebase Auth, and stores user data in Firestore.
+This is the web backend and landing page for **iconicme** - an AI-powered image stylization mobile app. The project handles subscription payments via Paynow (supporting Ecocash, OneMoney, and card payments), manages user authentication with Firebase Auth, and stores user data in Firestore.
 
 **Tech Stack:** Next.js 15 (App Router), TypeScript, Firebase Auth & Firestore, Tailwind CSS v4, Paynow SDK
 
@@ -234,11 +234,11 @@ No testing framework is currently configured. If adding tests, consider Jest or 
 
 ## Application Metadata
 
-- **App Name:** Animate
+- **App Name:** iconicme
 - **Description:** AI Image Style Editor
 - **Company:** Pixelspulse Private Limited
-- **Deep Link Scheme:** `animate://`
-- **Success Redirect:** `animate://success` after payment
+- **Deep Link Scheme:** `iconicme://`
+- **Success Redirect:** `iconicme://success` after payment
 - **Supported Currencies:** USD, ZWG
 - **Payment Provider:** Paynow Zimbabwe (supporting Ecocash, OneMoney, and Visa/Mastercard)
 - **AI Service:** Google Gemini 2.5 Flash Image (Nano Banana) for AI-powered image editing and transformation

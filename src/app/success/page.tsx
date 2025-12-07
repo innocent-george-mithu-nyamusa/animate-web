@@ -33,13 +33,13 @@ export default function Success() {
 
   const handleReturnToApp = () => {
     // Deep link back to the Flutter app
-    const appScheme = "animate://success";
+    const appScheme = "iconicme://success";
     window.location.href = appScheme;
 
     // Fallback: show instructions after a delay
     setTimeout(() => {
       alert(
-        "Please return to the Animate app to continue using your subscription."
+        "Please return to the IconicMe app to continue using your subscription."
       );
     }, 2000);
   };
@@ -72,7 +72,7 @@ export default function Success() {
               className="w-full bg-black hover:bg-gray-800 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 animate-slide-up"
             >
               <Smartphone className="w-5 h-5" />
-              Return to Animate App
+              Return to IconicMe App
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
@@ -82,10 +82,10 @@ export default function Success() {
             <p className="text-sm text-gray-500">
               Questions? Contact our support team at{" "}
               <a
-                href="mailto:support@animateapp.com"
+                href="mailto:support@iconicme.shop"
                 className="text-blue-500 hover:underline"
               >
-                consult@pixels.co.zw
+                consult@iconicme.shop
               </a>
             </p>
           </div>

@@ -71,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       subscriptionId: subscriptionData?.subscriptionId || transactionData?.subscriptionId || '',
       orderId: transactionData?.orderId || subscriptionData?.metadata?.orderId || '',
       orderNumber: transactionData?.metadata?.orderNumber || Math.floor(Math.random() * 1000000),
-      productName: subscriptionData?.metadata?.productName || 'Animate Pro',
+      productName: subscriptionData?.metadata?.productName || 'IconicMe Pro',
       variantName: subscriptionData?.metadata?.variantName || 'Subscription',
       userEmail: email,
       userName: userData?.name || subscriptionData?.metadata?.customerName || 'User',
@@ -112,9 +112,9 @@ async function sendReceiptEmail(email: string, orderNumber: number, htmlContent:
   const resend = new Resend(process.env.RESEND_API_KEY);
   
   await resend.emails.send({
-    from: 'Animate <receipts@animateapp.com>',
+    from: 'IconicMe <receipts@iconicme.shop>',
     to: [email],
-    subject: `Your Animate Receipt #${orderNumber}`,
+    subject: `Your IconicMe Receipt #${orderNumber}`,
     html: htmlContent,
   });
   */
@@ -129,9 +129,9 @@ async function sendReceiptEmail(email: string, orderNumber: number, htmlContent:
     },
     body: JSON.stringify({
       to: email,
-      subject: `Your Animate Receipt #${orderNumber}`,
+      subject: `Your IconicMe Receipt #${orderNumber}`,
       html: htmlContent,
-      from: 'receipts@animateapp.com',
+      from: 'receipts@iconicme.shop',
     }),
   });
 
@@ -141,7 +141,7 @@ async function sendReceiptEmail(email: string, orderNumber: number, htmlContent:
 
   // For development/testing, you can just log the email content
   console.log('Email would be sent to:', email);
-  console.log('Subject: Your Animate Receipt #' + orderNumber);
+  console.log('Subject: Your IconicMe Receipt #' + orderNumber);
   console.log('HTML Content:', htmlContent.substring(0, 200) + '...');
 }
 
@@ -169,7 +169,7 @@ function generateReceiptEmailHTML(data: any): string {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Your Animate Receipt</title>
+      <title>Your IconicMe Receipt</title>
       <style>
         body { 
           font-family: 'Arial', sans-serif; 
@@ -273,7 +273,7 @@ function generateReceiptEmailHTML(data: any): string {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Animate</h1>
+          <h1>IconicMe</h1>
           <p>AI Animation Platform</p>
         </div>
 
@@ -339,15 +339,15 @@ function generateReceiptEmailHTML(data: any): string {
           </div>
 
           <div style="text-align: center;">
-            <a href="https://animateapp.com/receipt?subscription_id=${data.subscriptionId}" class="button">
+            <a href="https://iconicme.shop/receipt?subscription_id=${data.subscriptionId}" class="button">
               View Full Receipt
             </a>
           </div>
         </div>
 
         <div class="footer">
-          <p><strong>Thank you for choosing Animate!</strong></p>
-          <p>Questions? Contact us at <a href="mailto:support@animateapp.com">support@animateapp.com</a></p>
+          <p><strong>Thank you for choosing IconicMe!</strong></p>
+          <p>Questions? Contact us at <a href="mailto:support@iconicme.shop">support@iconicme.shop</a></p>
           <p style="font-size: 12px; color: #999; margin-top: 20px;">
             This is an automated email. Please do not reply to this message.
           </p>

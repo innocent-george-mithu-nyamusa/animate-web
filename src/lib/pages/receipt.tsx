@@ -103,7 +103,7 @@ export default function ReceiptPage() {
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `animate-receipt-${receiptData.orderNumber}.pdf`;
+      a.download = `iconicme-receipt-${receiptData.orderNumber}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -378,11 +378,11 @@ export default function ReceiptPage() {
           {/* Footer */}
           <div className="bg-gray-50 px-8 py-6">
             <div className="text-center text-sm text-gray-500">
-              <p className="mb-2">Thank you for your subscription to Animate!</p>
+              <p className="mb-2">Thank you for your subscription to IconicMe!</p>
               <p>
                 Questions? Contact support at{' '}
-                <a href="mailto:support@animateapp.com" className="text-blue-500 hover:underline">
-                  support@animateapp.com
+                <a href="mailto:support@iconicme.shop" className="text-blue-500 hover:underline">
+                  support@iconicme.shop
                 </a>
               </p>
             </div>

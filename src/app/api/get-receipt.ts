@@ -91,7 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       subscriptionId: subscriptionData?.subscriptionId || transactionData?.subscriptionId || '',
       orderId: transactionData?.orderId || subscriptionData?.metadata?.orderId || '',
       orderNumber: transactionData?.metadata?.orderNumber || Math.floor(Math.random() * 1000000),
-      productName: subscriptionData?.metadata?.productName || transactionData?.metadata?.productName || 'Animate Pro',
+      productName: subscriptionData?.metadata?.productName || transactionData?.metadata?.productName || 'IconicMe Pro',
       variantName: subscriptionData?.metadata?.variantName || transactionData?.metadata?.variantName || 'Subscription',
       userEmail: userData?.email || subscriptionData?.customerEmail || transactionData?.metadata?.customerEmail || '',
       userName: userData?.name || subscriptionData?.metadata?.customerName || transactionData?.metadata?.customerName || 'User',

@@ -232,10 +232,10 @@ export default function AdminOrdersPage() {
             <div className="flex items-center space-x-3">
               <img
                 src="/prod-logo.png"
-                alt="Animate"
+                alt="iconicme"
                 className="w-10 h-10 rounded-xl object-contain"
               />
-              <span className="text-2xl font-bold">Animate Admin</span>
+              <span className="text-2xl font-bold">iconicme Admin</span>
             </div>
             <button
               onClick={() => router.push("/")}

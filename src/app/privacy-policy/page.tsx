@@ -42,12 +42,12 @@ const PrivacyPolicyPage: React.FC = () => {
             <div className="flex items-center space-x-4">
               <img 
               src="/prod-logo.png"
-              alt="Animate Logo" 
+              alt="IconicMe Logo" 
               className="w-10 h-10 rounded-xl object-contain"
             />
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Privacy Policy</h1>
-                <p className="text-gray-600">Animate - Image Stylizer</p>
+                <p className="text-gray-600">IconicMe - Image Stylizer</p>
               </div>
             </div>
           </div>
@@ -69,10 +69,10 @@ const PrivacyPolicyPage: React.FC = () => {
             {/* Introduction */}
             <Section title="Introduction">
               <p>
-                Welcome to Animate, an AI-powered image stylization application developed by Pixelspulse Private Limited ("we," "our," or "us"). We are committed to protecting your privacy and ensuring the security of your personal information.
+                Welcome to IconicMe, an AI-powered image stylization application developed by Pixelspulse Private Limited ("we," "our," or "us"). We are committed to protecting your privacy and ensuring the security of your personal information.
               </p>
               <p>
-                This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application Animate and our web service at https://animate.pixels.co.zw/ (collectively, the "Service").
+                This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application IconicMe and our web service at https://iconicme.shop/ (collectively, the "Service").
               </p>
               <p>
                 By using our Service, you consent to the data practices described in this policy. If you do not agree with this policy, please do not use our Service.
@@ -196,7 +196,7 @@ const PrivacyPolicyPage: React.FC = () => {
               <p>To exercise any of these rights, please contact us at:</p>
               <div className="bg-gray-50 p-4 rounded border mt-2">
                 <p><strong>Email:</strong> consult@pixel.co.zw</p>
-                <p><strong>Subject Line:</strong> Privacy Rights Request - Animate App</p>
+                <p><strong>Subject Line:</strong> Privacy Rights Request - IconicMe App</p>
               </div>
             </Section>
 
@@ -243,8 +243,8 @@ const PrivacyPolicyPage: React.FC = () => {
                 <h4 className="font-semibold text-gray-800 mb-3">Pixelspulse Private Limited</h4>
                 <div className="space-y-2">
                   <p><strong>Email:</strong> consult@pixel.co.zw</p>
-                  <p><strong>Website:</strong> <a href="http://pixels.co.zw" className="text-blue-600 hover:underline">http://pixels.co.zw</a></p>
-                  <p><strong>App Website:</strong> <a href="https://animate.pixels.co.zw/" className="text-blue-600 hover:underline">https://animate.pixels.co.zw/</a></p>
+                  <p><strong>Website:</strong> <a href="http://iconicme.shop" className="text-blue-600 hover:underline">http://iconicme.shop</a></p>
+                  <p><strong>App Website:</strong> <a href="https://iconicme.shop/" className="text-blue-600 hover:underline">https://iconicme.shop/</a></p>
                   <p><strong>Developer:</strong> Innocent Nyamusa</p>
                 </div>
               </div>
