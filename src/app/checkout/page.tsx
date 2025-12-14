@@ -90,6 +90,8 @@ export default function CheckoutPage() {
       // Get ID token
       const idToken = await user.getIdToken();
 
+      console.log(`Styled image data from checkout: ${styledImageData}`);
+
       // Create order
       const orderResponse = await fetch("/api/products/order", {
         method: "POST",

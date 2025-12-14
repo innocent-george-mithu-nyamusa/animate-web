@@ -663,8 +663,16 @@ export class FirebaseOrderService {
     imageDataUrl: string
   ): Promise<string> {
     try {
+      // Validate imageDataUrl is provided and is a string
+      if (!imageDataUrl || typeof imageDataUrl !== 'string') {
+        throw new Error("Image data URL is required and must be a string");
+      }
+
       // Extract base64 data from data URL
       const matches = imageDataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) {
+        throw new Error("Invalid image data URL format");
+      }
       if (!matches || matches.length !== 3) {
         throw new Error("Invalid image data URL");
       }
