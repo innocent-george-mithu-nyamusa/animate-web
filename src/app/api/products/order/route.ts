@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       idToken,
       productType,
       productDetails,
-      styledImageDataUrl,
+      styledImageData,
       styleApplied,
       currency,
       shippingAddress,
@@ -55,12 +55,30 @@ export async function POST(request: NextRequest) {
     // Generate order ID
     const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
 
+    // Validate that styled image data URL is provided
+    if (!styledImageData || typeof styledImageData !== 'string') {
+      return NextResponse.json(
+        { success: false, message: "Styled image data is required" },
+        { status: 400 }
+      );
+    }
+
+    console.log(`Style image url ${styledImageData}`)
     // Upload styled image to Firebase Storage
-    const styledImageUrl = await orderService.uploadStyledImage(
-      userId,
-      orderId,
-      styledImageDataUrl
-    );
+    let styledImageUrl = '';
+    try {
+      styledImageUrl = await orderService.uploadStyledImage(
+        userId,
+        orderId,
+        styledImageData
+      );
+    } catch (uploadError) {
+      console.error("Image upload failed:", uploadError);
+      return NextResponse.json(
+        { success: false, message: "Failed to upload styled image" },
+        { status: 400 }
+      );
+    }
 
     // Create order in Firestore
     await orderService.createOrder({
