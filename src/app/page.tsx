@@ -999,7 +999,7 @@ export default function AnimateSPA() {
                               className="px-6 py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 font-semibold transition-all transform hover:shadow-lg hover:scale-105 flex items-center space-x-2"
                             >
                               <ShoppingCart className="w-5 h-5" />
-                              <span>Order Your Image Toy</span>
+                              <span>Order Toy/Frame</span>
                             </button>
                           </>
                         )}
