@@ -641,6 +641,32 @@ export class FirebaseSubscriptionService {
       throw new Error(`Failed to renew subscription: ${error}`);
     }
   }
+
+  /**
+   * Get all users (for admin operations like bulk emails)
+   */
+  async getAllUsers() {
+    try {
+      const usersSnapshot = await this.db
+        .collection("users")
+        .get();
+
+      return usersSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          uid: doc.id,
+          email: data.email || '',
+          displayName: data.displayName || data.email || 'Valued Customer',
+          subscription: data.subscription,
+          credits: data.credits,
+          createdAt: data.createdAt,
+        };
+      });
+    } catch (error) {
+      console.error("Failed to get all users:", error);
+      throw new Error(`Failed to get all users: ${error}`);
+    }
+  }
 }
 
 /**
@@ -896,3 +922,7 @@ export class FirebaseOrderService {
     }
   }
 }
+
+
+// Export a singleton instance
+export const firebaseSubscriptionService = new FirebaseSubscriptionService();
