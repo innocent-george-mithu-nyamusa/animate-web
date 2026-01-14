@@ -8,7 +8,6 @@ export default function RebrandingEmailsPage() {
   const [testEmail, setTestEmail] = useState('');
   const [singleEmail, setSingleEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [adminSecret, setAdminSecret] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +18,7 @@ export default function RebrandingEmailsPage() {
     setResult(null);
 
     try {
+
       const body: any = { mode };
 
       if (mode === 'test') {
@@ -40,7 +40,6 @@ export default function RebrandingEmailsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminSecret}`,
         },
         body: JSON.stringify(body),
       });
@@ -71,23 +70,6 @@ export default function RebrandingEmailsPage() {
               <p className="text-gray-600">Send Animate → IconicMe announcement emails</p>
             </div>
           </div>
-        </div>
-
-        {/* Admin Secret */}
-        <div className="bg-white rounded-2xl p-8 mb-6 shadow-xl">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Admin Secret Key
-          </label>
-          <input
-            type="password"
-            value={adminSecret}
-            onChange={(e) => setAdminSecret(e.target.value)}
-            placeholder="Enter ADMIN_SECRET"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-          />
-          <p className="text-sm text-gray-500 mt-2">
-            Set ADMIN_SECRET in your environment variables
-          </p>
         </div>
 
         {/* Mode Selection */}
@@ -212,9 +194,9 @@ export default function RebrandingEmailsPage() {
         {/* Send Button */}
         <button
           onClick={handleSendEmails}
-          disabled={loading || !adminSecret}
+          disabled={loading}
           className={`w-full py-4 rounded-lg font-bold text-white text-lg transition-all ${
-            loading || !adminSecret
+            loading
               ? 'bg-gray-400 cursor-not-allowed'
               : mode === 'all'
               ? 'bg-red-600 hover:bg-red-700'
