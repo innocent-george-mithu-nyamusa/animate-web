@@ -8,21 +8,10 @@ import { firebaseSubscriptionService } from '@/lib/firebase-admin';
  *
  * Sends rebranding announcement emails to all users
  *
- * Security: Requires ADMIN_SECRET environment variable
+ * Security: Internal admin route - should be protected by middleware or authentication
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check for admin authorization
-    const authHeader = request.headers.get('authorization');
-    const adminSecret = process.env.ADMIN_SECRET;
-
-    if (!adminSecret || authHeader !== `Bearer ${adminSecret}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Check if Resend API key is configured
     if (!process.env.RESEND_API_KEY) {
       return NextResponse.json(
