@@ -33,7 +33,7 @@ function generateRebrandingEmailHTML(userName: string = 'Valued Customer'): stri
                   <ul style="margin: 0; padding-left: 20px;">
                     <li style="margin-bottom: 10px;"><strong>New Name:</strong> Animate → <strong>IconicMe</strong></li>
                     <li style="margin-bottom: 10px;"><strong>New Website:</strong> <a href="https://iconicme.shop" style="color: #7c3aed; text-decoration: none;">https://iconicme.shop</a></li>
-                    <li style="margin-bottom: 10px;"><strong>New Email:</strong> no-reply@iconicme.shop</li>
+                    <li style="margin-bottom: 10px;"><strong>New Email:</strong> enquiry@iconicme.shop</li>
                   </ul>
                 </div>
 

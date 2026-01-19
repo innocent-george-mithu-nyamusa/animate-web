@@ -320,7 +320,7 @@ We're thrilled to share that Animate has rebranded to IconicMe!
 WHAT'S CHANGED?
 - New Name: Animate → IconicMe
 - New Website: https://iconicme.shop
-- New Email: no-reply@iconicme.shop
+- New Email: enquiry@iconicme.shop
 
 WHAT STAYS THE SAME?
 ✅ Your account and subscription details

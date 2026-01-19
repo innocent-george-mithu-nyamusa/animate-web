@@ -64,7 +64,7 @@ The rebranding email includes:
 ✅ **Key Information**
 - New name: Animate → IconicMe
 - New domain: animate.pixels.co.zw → iconicme.shop
-- New email: no-reply@iconicme.shop
+- New email: enquiry@iconicme.shop
 - Reassurance that accounts/subscriptions remain unchanged
 
 ✅ **Call to Action**
@@ -225,7 +225,7 @@ To customize the email template:
 
 ### Emails Going to Spam
 - Ensure DNS records (SPF, DKIM) are verified
-- Use verified domain (`no-reply@iconicme.shop`)
+- Use verified domain (`enquiry@iconicme.shop`)
 - Avoid spam trigger words
 - Maintain good sender reputation
 
